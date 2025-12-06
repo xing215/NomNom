@@ -40,9 +40,13 @@ void mqtt_mqttConnect() {
 }
 
 // PUBLISH FUNCTIONS
-void mqtt_publish(String subtopic, String data)
+void mqtt_publish(String subtopic, String data, bool retain = true)
 {
-  mqttClient.publish((TOPIC_BASE + subtopic).c_str(), data.c_str());
+  mqttClient.publish(
+    (TOPIC_BASE + subtopic).c_str(),
+    data.c_str(),
+    retain
+  );
 }
 
 void mqtt_callback(char* topic, byte* message, unsigned int length) {

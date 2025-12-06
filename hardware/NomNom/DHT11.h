@@ -4,7 +4,7 @@
 #include "libs.h"
 #include "mqtt.h"
 
-#define DHTPIN  D3 
+#define DHTPIN  A0
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
