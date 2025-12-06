@@ -12,8 +12,23 @@
   --font-sans: var(--font-playpen-sans);
 }
 
+html,
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-playpen-sans), Arial, Helvetica, sans-serif;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.hidden-scrollbar {
+  scrollbar-width: none;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
 }

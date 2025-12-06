@@ -18,7 +18,7 @@ export default function SignupPage() {
         {/* Image 9 - Left side */}
         <div className="absolute left-[40px] top-[301px] w-[299px] h-[574px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/95f11669-dd1b-43ff-a652-eef8408beeb5"
+            src="/images/cat-tree.png"
             alt="Cat decoration"
             fill
             className="object-cover"
@@ -28,7 +28,7 @@ export default function SignupPage() {
         {/* Image 10 - Bottom right */}
         <div className="absolute left-[1216px] top-[745px] w-[181px] h-[119px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/02630d1c-cdf0-4250-ad5a-03915ebf30e1"
+            src="/images/cat-toy.png"
             alt="Cat decoration"
             fill
             className="object-cover"
@@ -38,7 +38,7 @@ export default function SignupPage() {
         {/* Image 11 - Bottom */}
         <div className="absolute left-[1057px] top-[809px] w-[93px] h-[66px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/d3ddeecd-9288-4cca-ba77-74df162f9592"
+            src="/images/dream-cat.png"
             alt="Cat decoration"
             fill
             className="object-cover"
@@ -113,7 +113,7 @@ export default function SignupPage() {
         {/* Image 7 - Logo top right */}
         <div className="absolute left-[236px] top-[31px] w-[140px] h-[44px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/62ee227e-98b2-41ca-a83b-f8426af5a51f"
+            src="/images/wordmark.png"
             alt="NomNom Logo"
             fill
             className="object-cover"
@@ -123,7 +123,7 @@ export default function SignupPage() {
         {/* Image 9 - Left side */}
         <div className="absolute left-[20px] top-[535px] w-[177px] h-[340px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/08f52c05-a995-445c-b991-cb99f13f07e2"
+            src="/images/cat-tree.png"
             alt="Cat decoration"
             fill
             className="object-cover"
@@ -133,7 +133,7 @@ export default function SignupPage() {
         {/* Image 10 - Bottom right */}
         <div className="absolute left-[335px] top-[788px] w-[109px] h-[71px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/de228b6e-a01e-458b-9837-73bf805478cb"
+            src="/images/cat-toy.png"
             alt="Cat decoration"
             fill
             className="object-cover"
@@ -143,7 +143,7 @@ export default function SignupPage() {
         {/* Image 11 - Bottom */}
         <div className="absolute left-[239px] top-[826px] w-[56px] h-[40px]">
           <Image
-            src="https://www.figma.com/api/mcp/asset/27fcf04e-342f-4da2-b240-40b240c1ec71"
+            src="/images/dream-cat.png"
             alt="Cat decoration"
             fill
             className="object-cover"
