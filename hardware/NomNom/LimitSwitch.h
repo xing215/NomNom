@@ -2,9 +2,10 @@
 #define LIMITSWITCH_H
 #include "libs.h"
 
-#define PIN_LIMITSWITCH 1
+#define LS 1
 
 void LimitSwitch_setup() {
+  pinMode(LS, INPUT);
 }
 void LimitSwitch_loop() {
 
