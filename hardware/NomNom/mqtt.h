@@ -18,7 +18,8 @@ void mqtt_wifiConnect() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nConnected!");
+  Serial.println("");
+  Serial.println("Connected!");
 }
 void mqtt_mqttConnect() {
   while(!mqttClient.connected()) {
