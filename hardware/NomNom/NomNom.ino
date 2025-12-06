@@ -1,12 +1,14 @@
 #include "libs.h"
 #include "LimitSwitch.h"
+#include "mqtt.h"
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(9600);
+  mqtt_setup();
   LimitSwitch_setup();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  mqtt_loop();
   LimitSwitch_loop();
 }
