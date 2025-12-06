@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="relative max-h-[90vh] overflow-y-auto">
         {children}
       </div>
@@ -35,34 +36,33 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
         {/* Close button (X) */}
         <button
           onClick={onClose}
-          className="absolute right-[16px] top-[16px] w-[56px] h-[56px] flex items-center justify-center hover:opacity-80 transition-opacity"
+          className="absolute right-[20px] top-[20px] w-[35px] h-[35px] bg-[#ff9797] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
         >
-          <div className="rotate-45">
-            <svg width="40" height="40" viewBox="0 0 50 50" fill="none">
-              <path d="M25 5 L25 45 M5 25 L45 25" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <X size={30} strokeWidth={3} color="#000000" />
         </button>
 
         <h2 className="font-bold text-[32px] text-[#390202] text-center w-full">
           NOMS
         </h2>
+        <p className="text-[18px] text-[#390202] text-center w-full">
+          Configure the interval between feedings and how much to serve each time.
+        </p>
 
         <div className="h-px w-[24px] bg-transparent" />
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-right">
-            Time
+          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+            Time (Minutes)
           </p>
           <input
-            type="time"
+            type="number"
             className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
           />
         </div>
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-right">
-            AMOUNT (Grams)
+          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+            Amount (Grams)
           </p>
           <input
             type="number"
@@ -78,7 +78,7 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
             onClick={onDelete}
             className="bg-[#f7cbcb] rounded-[12px] px-[40px] py-[12px] hover:bg-[#f0c0c0] transition-colors"
           >
-            <p className="font-semibold text-[20px] text-black text-center">
+            <p className="font-semibold text-[20px] text-black text-left">
               DELETE
             </p>
           </button>
@@ -86,7 +86,7 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
             onClick={() => onSave?.('', '')}
             className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors"
           >
-            <p className="font-semibold text-[20px] text-black text-center">
+            <p className="font-semibold text-[20px] text-black text-left">
               SAVE
             </p>
           </button>
@@ -106,27 +106,22 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="bg-[#f4dfdf] rounded-[18px] p-[40px] flex flex-col gap-[24px] items-start relative w-[560px]">
+      <div className="bg-[#f4dfdf] rounded-[18px] p-[24px] flex flex-col gap-[16px] items-start relative w-[320px] md:w-[480px]">
         {/* Close button (X) */}
         <button
           onClick={onClose}
-          className="absolute right-[16px] top-[16px] w-[56px] h-[56px] flex items-center justify-center hover:opacity-80 transition-opacity"
+          className="absolute right-[20px] top-[20px] w-[35px] h-[35px] bg-[#ff9797] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
         >
-          <div className="rotate-45">
-            <svg width="40" height="40" viewBox="0 0 50 50" fill="none">
-              <path d="M25 5 L25 45 M5 25 L45 25" stroke="black" strokeWidth="4" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <X size={30} strokeWidth={3} color="#000000" />
         </button>
 
+        {/* <div className="h-[35px] w-[24px] bg-transparent" /> */}
         <h2 className="font-bold text-[32px] text-[#390202] text-center w-full">
           SETTINGS
         </h2>
 
-        <div className="h-px w-[24px] bg-transparent" />
-
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-right">
+          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
             Maximum amount
           </p>
           <input
@@ -137,19 +132,8 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
         </div>
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-right">
-            treat AMOUNT
-          </p>
-          <input
-            type="number"
-            placeholder="100"
-            className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
-          />
-        </div>
-
-        <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-right">
-            treat AMOUNT
+          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+            Treat Amount
           </p>
           <input
             type="number"
@@ -165,7 +149,7 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
             onClick={() => onSave?.({ maxAmount: '', treatAmount1: '', treatAmount2: '' })}
             className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors"
           >
-            <p className="font-semibold text-[20px] text-black text-center">
+            <p className="font-semibold text-[20px] text-black text-left">
               SAVE
             </p>
           </button>
@@ -207,7 +191,7 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
             </div>
           </button>
 
-          <h2 className="font-bold text-[22px] text-[#390202] text-center w-full">
+          <h2 className="font-bold text-[22px] text-[#390202] text-left w-full">
             BONES
           </h2>
 

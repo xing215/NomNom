@@ -95,7 +95,7 @@ export default function LandingPage() {
             <div className="rotate-[8.891deg]">
               <div className="relative w-[580px] h-[432px]">
                 <Image
-                  src="https://www.figma.com/api/mcp/asset/08db36ff-f0ef-4bd0-aa76-159416f862bf"
+                  src="/images/landing-speech.png"
                   alt="Hungry cat"
                   fill
                   className="object-cover"
