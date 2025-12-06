@@ -9,13 +9,12 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
-void LimitSwitch_setup() {
+void DHT11_setup() {
   Serial.println("DHT11 test on ESP8266");
   dht.begin();
 }
 
-void LimitSwitch_loop() {
-  // static = keeps value between calls to LimitSwitch_loop()
+void DHT11_loop() {
   static unsigned long dht_time = 0;
   unsigned long now = millis();
 
@@ -32,14 +31,14 @@ void LimitSwitch_loop() {
     }
 
     // --- JSON building (using String) ---
-    String json_humid_temp = "{";
+    String json = "{";
     json += "\"humidity\": ";
     json += h;                 // e.g. 55.3
     json += ", \"temperature\": ";
     json += t;                 // e.g. 28.7
     json += "}";
 
-    mqtt_publish("/humid", json_humid_temp);
+    mqtt_publish("/humid", json);
 
     Serial.print("Humidity: ");
     Serial.print(h);

@@ -3,9 +3,5 @@
 
 // HERE
 #include <DHT.h>
-#include <DHT_U.h>
-
-#include <Adafruit_CircuitPlayground.h>
-#include <Adafruit_Circuit_Playground.h>
 
 #endif
