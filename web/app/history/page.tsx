@@ -23,6 +23,8 @@ import {
 
 const AVAILABLE_WEEKS: WeekOption[] = buildAvailableWeeks();
 
+export const dynamic = 'force-static';
+
 export default function HistoryPage() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);

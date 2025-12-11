@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+export const dynamic = 'force-static';
+
 export default function LoginPage() {
   return (
     <div className="relative w-full md:h-screen h-[90vh] bg-[#f4dfdf] flex items-center justify-center overflow-hidden p-[10px]">
@@ -79,21 +81,25 @@ export default function LoginPage() {
 
         <div className="flex flex-col gap-[30px] md:gap-[28px] items-center px-[30px] md:px-0 w-full">
           <div className="flex flex-col items-center gap-[20px] md:gap-[12px] w-full">
-            <p className="font-semibold text-[24px] md:text-[20px] text-[#390202] text-center">
+            <label htmlFor="email" className="font-semibold text-[24px] md:text-[20px] text-[#390202] text-center">
               Email
-            </p>
+            </label>
             <input
+              id="email"
               type="email"
+              placeholder="Enter your email"
               className="w-full max-w-[332px] md:max-w-[480px] h-[53px] md:h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[18px] md:rounded-[16px] px-[15px] md:px-[18px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
             />
           </div>
 
           <div className="flex flex-col items-center gap-[20px] md:gap-[12px] w-full">
-            <p className="font-semibold text-[24px] md:text-[20px] text-[#390202] text-center">
+            <label htmlFor="password" className="font-semibold text-[24px] md:text-[20px] text-[#390202] text-center">
               Password
-            </p>
+            </label>
             <input
+              id="password"
               type="password"
+              placeholder="Enter your password"
               className="w-full max-w-[332px] md:max-w-[480px] h-[53px] md:h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[18px] md:rounded-[16px] px-[15px] md:px-[18px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
             />
           </div>
