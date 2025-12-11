@@ -4,13 +4,12 @@
 #include "libs.h"
 #include "mqtt.h"
 
-#define DHTPIN  A0
+#define DHTPIN  D7
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
 
 void DHT11_setup() {
-  Serial.println("DHT11 test on ESP8266");
   dht.begin();
 }
 

@@ -128,15 +128,6 @@ void mqtt_loop() {
   }
 
   mqttClient.loop();
-
-  // Publish sensor data mỗi 5 giây (có thể sửa theo nhu cầu)
-  if (now - lastPublish >= 5000UL) {
-    lastPublish = now;
-    
-    // Publish dữ liệu sensors ở đây nếu cần
-    // mqtt_publish("/temperature", String(temperature));
-    // mqtt_publish("/humidity", String(humidity));
-  }
 }
 
 #endif
