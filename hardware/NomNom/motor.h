@@ -4,7 +4,7 @@
 #include "libs.h"
 #include <ArduinoJson.h>
 
-#define MOTOR_PIN D7
+#define MOTOR_PIN D4
 #define MOTOR_SPEED 1023  // PWM speed (0-1023 cho ESP8266)
 
 // ============== BIẾN TOÀN CỤC CHO MOTOR ==============
@@ -25,9 +25,6 @@ unsigned long lastAutoFeedTime = 0;     // Thời điểm cho ăn tự động l
 // Timeout để tránh motor chạy mãi
 unsigned long motorStartTime = 0;
 #define MOTOR_TIMEOUT_MS 30000  // Tối đa 30 giây
-
-// Biến từ LoadCell.h - khai báo extern để truy cập
-extern float currentWeight_g;
 
 /**
  * Khởi tạo motor

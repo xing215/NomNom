@@ -25,8 +25,13 @@ Adafruit_HX711 hx711(LOADCELL_DATA_PIN, LOADCELL_SCK_PIN);
 // Lưu giá trị cân nặng hiện tại để các module khác đọc
 float currentWeight_g = 0.0f;
 
-// Trạng thái loadcell
-bool loadcellReady = false;
+/**
+ * Lấy khối lượng thức ăn còn trong tô (gram)
+ * @return Khối lượng tính bằng gram
+ */
+float LoadCell_getWeight() {
+  return currentWeight_g;
+}
 
 void LoadCell_setup() {
   Serial.println("HX711 (Adafruit_HX711) loadcell init");
@@ -112,7 +117,7 @@ void LoadCell_loop() {
     // Clean tiny negatives
     if (weight_g < 0) weight_g = 0;
     
-    // Cập nhật biến global
+    // Cập nhật biến global để các module khác đọc được
     currentWeight_g = weight_g;
 
     bool overload = (weight_g > LOADCELL_MAX_WEIGHT_G * 1.05f);
