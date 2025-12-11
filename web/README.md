@@ -22,6 +22,10 @@ MQTT_TOPIC_BASE=/23CLC03/NomNom
 # MQTT_PASSWORD=...
 
 # You can also provide MQTT_URL=mqtt://host:port to override host/protocol/port at once
+
+# Optional database logging
+# DATABASE_URL=postgres://user:password@host:5432/nomnom
+# DATABASE_SSL=true
 ```
 
 ## Install & run
@@ -72,6 +76,22 @@ curl -X POST http://localhost:3000/api/mqtt/manual-feed \
 ```
 
 The raw payloads for each topic are also included under `topics` in the same response when low-level debugging is needed.
+
+## Telemetry persistence
+
+Every MQTT message arriving on the firmware topics is also forwarded to the server-side persistence layer. If `DATABASE_URL` is defined, the app attempts to insert rows into a `telemetry_events` table with the following shape:
+
+```sql
+CREATE TABLE IF NOT EXISTS telemetry_events (
+	id BIGSERIAL PRIMARY KEY,
+	topic TEXT NOT NULL,
+	payload_raw TEXT NOT NULL,
+	payload_json JSONB,
+	received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+When no database connection is configured, the payloads are simply `console.log`'d so you can verify the ingestion flow without hosting Postgres yet. The persistence hook is initialized whenever the `/api/mqtt/telemetry` route runs (and any other server module can call `ensureTelemetryPersistence()` to opt in).
 
 ## Notes
 

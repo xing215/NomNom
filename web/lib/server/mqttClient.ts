@@ -19,7 +19,7 @@ export interface AutoFeedConfig {
   firstFeedAt?: string;
 }
 
-interface TelemetryMessage<T = unknown> {
+export interface TelemetryMessage<T = unknown> {
   topic: string;
   raw: string;
   receivedAt: string;
@@ -83,6 +83,10 @@ const topicKeyFromName = new Map<string, TopicKey>(
 
 const subscriptionTopics = Object.values(TELEMETRY_TOPICS);
 
+export type MqttMessageListener = (message: TelemetryMessage) => void | Promise<void>;
+
+const mqttMessageListeners = new Set<MqttMessageListener>();
+
 let client: MqttClient | null = null;
 let clientPromise: Promise<MqttClient> | null = null;
 let listenersBound = false;
@@ -126,6 +130,23 @@ function cloneSnapshot(): TelemetrySnapshot {
     topics,
     summary: { ...telemetrySummary },
   };
+}
+
+export function registerMqttListener(listener: MqttMessageListener) {
+  mqttMessageListeners.add(listener);
+  return () => mqttMessageListeners.delete(listener);
+}
+
+function notifyMessageListeners(message: TelemetryMessage) {
+  if (!mqttMessageListeners.size) {
+    return;
+  }
+
+  for (const listener of mqttMessageListeners) {
+    Promise.resolve(listener(message)).catch((error) => {
+      console.error('[MQTT] Listener error', error);
+    });
+  }
 }
 
 function bindClientListeners(instance: MqttClient) {
@@ -172,6 +193,8 @@ function bindClientListeners(instance: MqttClient) {
       telemetryTopics[key] = message;
       updateTelemetrySummary(key, parsed);
     }
+
+    notifyMessageListeners(message);
   });
 
   instance.on('close', () => {
