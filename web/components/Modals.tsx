@@ -13,8 +13,8 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="relative max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -37,6 +37,7 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
         <button
           onClick={onClose}
           className="absolute right-[20px] top-[20px] w-[35px] h-[35px] bg-[#ff9797] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+          aria-label="Close modal"
         >
           <X size={30} strokeWidth={3} color="#000000" />
         </button>
@@ -51,20 +52,23 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
         <div className="h-px w-[24px] bg-transparent" />
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+          <label htmlFor="noms-time" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
             Time (Minutes)
-          </p>
+          </label>
           <input
+            id="noms-time"
             type="number"
+            placeholder="Enter time in minutes"
             className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
           />
         </div>
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+          <label htmlFor="noms-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
             Amount (Grams)
-          </p>
+          </label>
           <input
+            id="noms-amount"
             type="number"
             placeholder="500"
             className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
@@ -111,6 +115,7 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
         <button
           onClick={onClose}
           className="absolute right-[20px] top-[20px] w-[35px] h-[35px] bg-[#ff9797] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+          aria-label="Close modal"
         >
           <X size={30} strokeWidth={3} color="#000000" />
         </button>
@@ -121,10 +126,11 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
         </h2>
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+          <label htmlFor="max-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
             Maximum amount
-          </p>
+          </label>
           <input
+            id="max-amount"
             type="number"
             placeholder="500"
             className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
@@ -132,10 +138,11 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
         </div>
 
         <div className="flex flex-col gap-[8px] items-end w-full">
-          <p className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+          <label htmlFor="treat-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
             Treat Amount
-          </p>
+          </label>
           <input
+            id="treat-amount"
             type="number"
             placeholder="100"
             className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"

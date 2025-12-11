@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+export const dynamic = 'force-static';
+
 export default function LandingPage() {
   return (
     <div className="relative w-full h-[90vh] md:h-screen bg-[#f4dfdf] overflow-hidden">
