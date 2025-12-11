@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Edit3 } from 'lucide-react';
 import Header from '@/components/Header';
 import ChatbotButton from '@/components/ChatbotButton';
@@ -14,14 +14,135 @@ import { NomsModal, SettingsModal, ChatbotModal } from '@/components/Modals';
 
 export const dynamic = 'force-static';
 
+interface TelemetrySummary {
+  weightGrams?: number;
+  humidity?: number;
+  temperature?: number;
+  distanceMm?: number;
+  limitSwitchPressed?: boolean;
+  bowlLikelyEmpty?: boolean;
+  updatedAt?: string;
+}
+
+type TelemetryState = TelemetrySummary | null;
+
+type FeedStatus = {
+  type: 'success' | 'error';
+  message: string;
+} | null;
+
+interface TelemetryEndpointResponse {
+  summary?: TelemetrySummary | null;
+  error?: string;
+  [key: string]: unknown;
+}
+
+interface ManualFeedResponse {
+  ok?: boolean;
+  error?: string;
+  [key: string]: unknown;
+}
+
 export default function MainPage() {
   const [isNomsModalOpen, setIsNomsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [isFeeding, setIsFeeding] = useState(false);
+  const [feedStatus, setFeedStatus] = useState<FeedStatus>(null);
+  const [telemetry, setTelemetry] = useState<TelemetryState>(null);
+  const [telemetryError, setTelemetryError] = useState<string | null>(null);
 
-  const handleFeed = (amount: number) => {
-    console.log('Feeding:', amount);
-  };
+  const loadTelemetry = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mqtt/telemetry', { cache: 'no-store' });
+      let body: TelemetryEndpointResponse | null = null;
+
+      try {
+        body = (await response.json()) as TelemetryEndpointResponse;
+      } catch {
+        body = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(body?.error ?? 'Unable to load telemetry');
+      }
+
+      return { summary: body?.summary ?? null, error: null as string | null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load telemetry';
+      return { summary: null, error: message };
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const poll = async () => {
+      const result = await loadTelemetry();
+      if (!active) return;
+      setTelemetry(result.summary);
+      setTelemetryError(result.error);
+    };
+
+    void poll();
+    const intervalId = setInterval(() => {
+      void poll();
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [loadTelemetry]);
+
+  const handleFeed = useCallback(async (amount: number) => {
+    setFeedStatus(null);
+    setIsFeeding(true);
+
+    try {
+      const response = await fetch('/api/mqtt/manual-feed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ grams: amount }),
+      });
+
+      let body: ManualFeedResponse | null = null;
+      try {
+        body = (await response.json()) as ManualFeedResponse;
+      } catch {
+        body = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(body?.error ?? 'Unable to send feed command');
+      }
+
+      setFeedStatus({ type: 'success', message: `Command sent for ${amount}g.` });
+      const latest = await loadTelemetry();
+      setTelemetry(latest.summary);
+      setTelemetryError(latest.error);
+    } catch (error) {
+      setFeedStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Unable to trigger feeding.',
+      });
+    } finally {
+      setIsFeeding(false);
+    }
+  }, [loadTelemetry]);
+
+  const maxFoodCapacity = 500;
+  const currentFoodAmount = Math.max(0, Math.round(telemetry?.weightGrams ?? 0));
+  const foodPercentage = Math.min(100, Math.round((currentFoodAmount / maxFoodCapacity) * 100));
+
+  const humidityDisplay = telemetry?.humidity !== undefined && telemetry?.humidity !== null
+    ? `${telemetry.humidity.toFixed(1)}%`
+    : '--';
+  const temperatureDisplay = telemetry?.temperature !== undefined && telemetry?.temperature !== null
+    ? `${telemetry.temperature.toFixed(1)}°C`
+    : '--';
 
   return (
     <div className="flex flex-col w-full h-screen bg-[#f4dfdf] overflow-y-auto md:overflow-hidden hidden-scrollbar">
@@ -37,15 +158,22 @@ export default function MainPage() {
             {/* Food bowl meter */}
             <div className="relative z-100 mt-10 scale-75 md:scale-80 lg:scale-90">
               <FoodMeter 
-                currentAmount={200}
-                maxAmount={500}
-                percentage={53}
+                currentAmount={currentFoodAmount}
+                maxAmount={maxFoodCapacity}
+                percentage={Number.isFinite(foodPercentage) ? foodPercentage : 0}
               />
             </div>
 
             {/* Feed input section */}
             <div className="relative z-20 mb-6">
-              <FeedInput onFeed={handleFeed} />
+              <FeedInput onFeed={handleFeed} isSubmitting={isFeeding} />
+              {feedStatus && (
+                <p
+                  className={`mt-3 text-center text-sm ${feedStatus.type === 'error' ? 'text-red-700' : 'text-green-700'}`}
+                >
+                  {feedStatus.message}
+                </p>
+              )}
             </div>
 
             {/* Cat decoration - only visible on desktop */}
@@ -57,9 +185,13 @@ export default function MainPage() {
         <div className="w-full md:w-[360px] flex flex-col h-full px-5 py-6 md:pt-10 md:pb-1 md:min-h-0">
           {/* Environment cards */}
           <div className="grid grid-cols-2 gap-2.5 w-full mb-4">
-            <EnvironmentCard label="Humidity:" value="100%" />
-            <EnvironmentCard label="Temperature" value="20°" />
+            <EnvironmentCard label="Humidity" value={humidityDisplay} />
+            <EnvironmentCard label="Temperature" value={temperatureDisplay} />
           </div>
+
+          {telemetryError && (
+            <p className="text-sm text-red-700 mb-2">{telemetryError}</p>
+          )}
 
           {/* Noms Sections - Scrollable */}
           <div className="flex flex-col flex-1 min-h-0 overflow-y-auto hidden-scrollbar">

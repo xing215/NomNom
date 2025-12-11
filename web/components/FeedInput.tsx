@@ -1,8 +1,27 @@
+'use client';
+
+import { useState } from 'react';
+
 interface FeedInputProps {
-  onFeed?: (amount: number) => void;
+  onFeed?: (amount: number) => void | Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export default function FeedInput({ onFeed }: FeedInputProps) {
+export default function FeedInput({ onFeed, isSubmitting = false }: FeedInputProps) {
+  const [amountInput, setAmountInput] = useState('100');
+
+  const parsedAmount = Number(amountInput);
+  const isAmountValid = amountInput.trim().length > 0 && Number.isFinite(parsedAmount) && parsedAmount > 0;
+  const isDisabled = !isAmountValid || isSubmitting;
+
+  const handleFeedClick = async () => {
+    if (!onFeed || !isAmountValid) {
+      return;
+    }
+
+    await onFeed(parsedAmount);
+  };
+
   return (
     <div className="flex flex-col gap-4 items-center">
       <p className="font-medium text-[20px] text-[#390202] text-center">
@@ -12,14 +31,18 @@ export default function FeedInput({ onFeed }: FeedInputProps) {
         <input
           type="number"
           placeholder="100"
+          inputMode="decimal"
+          value={amountInput}
+          onChange={(event) => setAmountInput(event.target.value)}
           className="w-[180px] h-[54px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[14px] px-4 text-[18px] focus:outline-none focus:border-[#3d4ec4]"
         />
         <button 
-          className="bg-[#ff9797] rounded-[12px] px-10 py-3 hover:bg-[#ff8585] transition-colors"
-          onClick={() => onFeed?.(100)}
+          className="bg-[#ff9797] rounded-[12px] px-10 py-3 hover:bg-[#ff8585] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          onClick={handleFeedClick}
+          disabled={isDisabled}
         >
           <p className="font-semibold text-[20px] text-black text-center">
-            FEED
+            {isSubmitting ? '...' : 'FEED'}
           </p>
         </button>
       </div>

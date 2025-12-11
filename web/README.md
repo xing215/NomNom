@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## NomNom Web
 
-## Getting Started
+NomNom is a Next.js dashboard that lets you monitor sensors on the IoT feeder and push feeding commands through MQTT. This document focuses on the web workspace under `web/`.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20+
+- npm 10+
+- Access to the same MQTT broker as the ESP8266 firmware
+
+## Environment variables
+
+Create a `.env.local` file in `web/` and set the broker coordinates. All values have sensible defaults matching the firmware, so you only need to override what differs in your setup.
+
+```
+MQTT_HOST=broker.hivemq.com
+MQTT_PORT=1883
+MQTT_PROTOCOL=mqtt
+MQTT_TOPIC_BASE=/23CLC03/NomNom
+# Optional auth
+# MQTT_USERNAME=...
+# MQTT_PASSWORD=...
+
+# You can also provide MQTT_URL=mqtt://host:port to override host/protocol/port at once
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Install & run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd web
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Visit http://localhost:3000 to open the app. The main page now polls telemetry via `/api/mqtt/telemetry` every 5 seconds and wires the "FEED" button to the manual MQTT publisher.
 
-## Learn More
+## Serverless API surface
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Method | Description |
+| --- | --- | --- |
+| `/api/mqtt/manual-feed` | `POST` | Publishes `{ action: "feed", grams }` to `/motor/manual_feed`. Body shape: `{ "grams": number, "note"?: string }`. |
+| `/api/mqtt/auto-feed` | `POST` | Updates the auto-feed config topic. Body shape: `{ "grams": number, "intervalMinutes": number, "enabled": boolean, "firstFeedAt"?: string }`. |
+| `/api/mqtt/telemetry` | `GET` | Returns cached readings from load cell, DHT11, limit switch, TOF, and device heartbeat. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Example: trigger a 25g treat
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+curl -X POST http://localhost:3000/api/mqtt/manual-feed \
+	-H "Content-Type: application/json" \
+	-d '{"grams":25,"note":"treat"}'
+```
 
-## Deploy on Vercel
+### Example response from `/api/mqtt/telemetry`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```json
+{
+	"connection": {
+		"connected": true,
+		"lastConnectedAt": "2025-12-11T12:34:56.789Z",
+		"lastMessageAt": "2025-12-11T12:35:02.123Z"
+	},
+	"summary": {
+		"weightGrams": 210.4,
+		"humidity": 55.2,
+		"temperature": 22.1,
+		"distanceMm": 4800,
+		"limitSwitchPressed": false,
+		"bowlLikelyEmpty": false,
+		"updatedAt": "2025-12-11T12:35:02.123Z"
+	}
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The raw payloads for each topic are also included under `topics` in the same response when low-level debugging is needed.
+
+## Notes
+
+- The MQTT client runs only on the server (Node runtime). Avoid importing `lib/server/mqttClient` inside client components.
+- Publish operations use QoS 1 for reliability but do not retain manual feed commands to prevent repeated meals when a device reconnects.
+- Telemetry subscriptions rely on retained topics from the firmware. Ensure the firmware continues publishing with retain enabled (default in `mqtt_publish`).
