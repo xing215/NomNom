@@ -12,6 +12,8 @@ import CatDecoration from '@/components/CatDecoration';
 import SectionHeader from '@/components/SectionHeader';
 import { NomsModal, SettingsModal, ChatbotModal } from '@/components/Modals';
 
+export const dynamic = 'force-static';
+
 export default function MainPage() {
   const [isNomsModalOpen, setIsNomsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
