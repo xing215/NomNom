@@ -26,6 +26,9 @@ unsigned long lastAutoFeedTime = 0;     // Thời điểm cho ăn tự động l
 unsigned long motorStartTime = 0;
 #define MOTOR_TIMEOUT_MS 30000  // Tối đa 30 giây
 
+// Biến từ LoadCell.h - khai báo extern để truy cập
+extern float currentWeight_g;
+
 /**
  * Khởi tạo motor
  */
