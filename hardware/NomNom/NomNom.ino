@@ -18,4 +18,5 @@ void loop() {
   LimitSwitch_loop();
   tof_loop();
   DHT11_loop();
+  delay(500);
 }

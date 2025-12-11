@@ -84,9 +84,6 @@ void mqtt_loop() {
 
   //***Publish data to MQTT Server***
   mqtt_publish("/temperature", "helo");
-  
-
-  delay(5000);
 }
 
 #endif
