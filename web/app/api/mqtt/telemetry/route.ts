@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 
 import { getTelemetrySnapshot, warmMqttConnection } from '@/lib/server/mqttClient';
+import { ensureTelemetryPersistence } from '@/lib/server/telemetryPersistence';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  ensureTelemetryPersistence();
+
   try {
     await warmMqttConnection();
   } catch (error) {
