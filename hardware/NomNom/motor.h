@@ -5,90 +5,64 @@
 #include <ArduinoJson.h>
 
 #define MOTOR_PIN D7
-
-// ============== CẤU HÌNH CHUYỂN ĐỔI GRAM -> DURATION ==============
-// Công thức: duration (ms) = grams * GRAMS_TO_MS_FACTOR
-// Ví dụ: 10 gram * 100 = 1000ms (1 giây)
-// Bạn cần calibrate lại giá trị này dựa trên motor thực tế
-#define GRAMS_TO_MS_FACTOR 100  // 1 gram = 100ms xoay motor
+#define MOTOR_SPEED 1023  // PWM speed (0-1023 cho ESP8266)
 
 // ============== BIẾN TOÀN CỤC CHO MOTOR ==============
+// Trạng thái motor
+bool motorRunning = false;              // Motor đang chạy?
+float motorTargetGrams = 0;             // Số gram mục tiêu cần đạt trong tô
+
 // Cho ăn thủ công
 bool motorManualTrigger = false;        // Flag cho ăn thủ công
-int motorManualGrams = 10;              // Số gram khi cho ăn thủ công
+float motorManualGrams = 10;            // Số gram khi cho ăn thủ công
 
 // Cho ăn tự động theo interval
 bool autoFeedEnabled = false;           // Bật/tắt chế độ tự động
 unsigned long autoFeedIntervalMs = 0;   // Interval giữa các lần cho ăn (ms)
-int autoFeedGrams = 10;                 // Số gram mỗi lần cho ăn tự động
+float autoFeedGrams = 10;               // Số gram mục tiêu mỗi lần cho ăn tự động
 unsigned long lastAutoFeedTime = 0;     // Thời điểm cho ăn tự động lần cuối
 
-// Forward declarations
-void motor_runMotor(int durationMs);
-int motor_gramsToMs(int grams);
-void motor_processManualFeed(String payload);
-void motor_processAutoFeedConfig(String payload);
-
-// External function từ LoadCell.h
-extern float LoadCell_getWeight();
-
-/**
- * Chuyển đổi gram thành thời gian xoay motor (ms)
- * @param grams Số gram thức ăn
- * @return Thời gian xoay motor (ms)
- */
-int motor_gramsToMs(int grams) {
-  // Công thức: duration = grams * factor
-  // Có thể thay đổi công thức phức tạp hơn nếu cần
-  int duration = grams * GRAMS_TO_MS_FACTOR;
-  
-  // Giới hạn min/max để tránh lỗi
-  if (duration < 100) duration = 100;      // Tối thiểu 100ms
-  if (duration > 30000) duration = 30000;  // Tối đa 30 giây
-  
-  return duration;
-}
+// Timeout để tránh motor chạy mãi
+unsigned long motorStartTime = 0;
+#define MOTOR_TIMEOUT_MS 30000  // Tối đa 30 giây
 
 /**
  * Khởi tạo motor
  */
 void motor_setup() {
   pinMode(MOTOR_PIN, OUTPUT);
-  digitalWrite(MOTOR_PIN, LOW);
+  analogWrite(MOTOR_PIN, 0);
   
   Serial.println("[Motor] Initialized");
-  Serial.print("[Motor] Conversion factor: 1 gram = ");
-  Serial.print(GRAMS_TO_MS_FACTOR);
-  Serial.println("ms");
 }
 
 /**
- * Xoay motor trong khoảng thời gian nhất định
- * @param durationMs Thời gian xoay (ms)
+ * Bắt đầu chạy motor để đạt target gram trong tô
+ * Motor sẽ chạy cho đến khi loadcell đọc được >= targetGrams
+ * @param targetGrams Số gram mục tiêu cần có trong tô
  */
-void motor_runMotor(int durationMs) {
-  Serial.print("[Motor] Running for ");
-  Serial.print(durationMs);
-  Serial.println("ms");
+void motor_startFeeding(float targetGrams) {
+  motorTargetGrams = targetGrams;
+  motorRunning = true;
+  motorStartTime = millis();
   
-  digitalWrite(MOTOR_PIN, HIGH);
-  delay(durationMs);
-  digitalWrite(MOTOR_PIN, LOW);
+  analogWrite(MOTOR_PIN, MOTOR_SPEED);
+  
+  Serial.print("[Motor] Started feeding, target: ");
+  Serial.print(targetGrams);
+  Serial.println("g in bowl");
+}
+
+/**
+ * Dừng motor
+ */
+void motor_stopFeeding() {
+  motorRunning = false;
+  motorTargetGrams = 0;
+  
+  analogWrite(MOTOR_PIN, 0);
   
   Serial.println("[Motor] Stopped");
-}
-
-/**
- * Cho ăn với số gram chỉ định
- * @param grams Số gram thức ăn
- */
-void motor_feedGrams(int grams) {
-  Serial.print("[Motor] Feeding ");
-  Serial.print(grams);
-  Serial.println(" grams");
-  
-  int duration = motor_gramsToMs(grams);
-  motor_runMotor(duration);
 }
 
 /**
@@ -128,7 +102,7 @@ void motor_processManualFeed(String payload) {
  * {
  *   "enabled": true,
  *   "interval_minutes": 30,  // Mỗi 30 phút cho ăn 1 lần
- *   "grams": 15              // Mỗi lần cho ăn 15 gram
+ *   "grams": 15              // Đảm bảo có 15 gram trong tô
  * }
  * @param payload JSON string từ MQTT
  */
@@ -162,19 +136,46 @@ void motor_processAutoFeedConfig(String payload) {
   Serial.print("  - Interval: ");
   Serial.print(intervalMinutes);
   Serial.println(" minutes");
-  Serial.print("  - Grams per feed: ");
+  Serial.print("  - Target grams in bowl: ");
   Serial.println(autoFeedGrams);
-  Serial.print("  - Duration per feed: ");
-  Serial.print(motor_gramsToMs(autoFeedGrams));
-  Serial.println("ms");
+}
+
+/**
+ * Kiểm tra motor đang chạy và dừng khi đạt target
+ * Sử dụng biến global currentWeight_g từ LoadCell.h
+ */
+void motor_checkFeedingProgress() {
+  if (!motorRunning) {
+    return;
+  }
+  
+  unsigned long now = millis();
+  
+  // Kiểm tra timeout để tránh motor chạy mãi
+  if (now - motorStartTime >= MOTOR_TIMEOUT_MS) {
+    Serial.println("[Motor] TIMEOUT! Force stop");
+    motor_stopFeeding();
+    return;
+  }
+  
+  // Đọc cân nặng hiện tại từ biến global của LoadCell.h
+  // currentWeight_g được khai báo trong LoadCell.h
+  if (currentWeight_g >= motorTargetGrams) {
+    Serial.print("[Motor] Target reached! Current: ");
+    Serial.print(currentWeight_g);
+    Serial.print("g >= Target: ");
+    Serial.print(motorTargetGrams);
+    Serial.println("g");
+    motor_stopFeeding();
+  }
 }
 
 /**
  * Kiểm tra và thực hiện cho ăn tự động theo interval
- * Có tính đến khối lượng thức ăn còn trong tô từ LoadCell
  */
 void motor_checkAutoFeed() {
-  if (!autoFeedEnabled || autoFeedIntervalMs == 0) {
+  // Không trigger nếu motor đang chạy
+  if (!autoFeedEnabled || autoFeedIntervalMs == 0 || motorRunning) {
     return;
   }
   
@@ -184,39 +185,47 @@ void motor_checkAutoFeed() {
   if (now - lastAutoFeedTime >= autoFeedIntervalMs) {
     lastAutoFeedTime = now;
     
-    // Đọc khối lượng còn trong tô từ LoadCell
-    float currentWeight = LoadCell_getWeight();
-    
-    // Tính lượng cần nhả = target - còn trong tô
-    int gramsToFeed = autoFeedGrams - (int)currentWeight;
-    
     Serial.println("[Motor] Auto feed triggered by interval");
-    Serial.print("[Motor] Target: ");
+    Serial.print("[Motor] Current in bowl: ");
+    Serial.print(currentWeight_g);
+    Serial.print("g, Target: ");
     Serial.print(autoFeedGrams);
-    Serial.print("g, Current in bowl: ");
-    Serial.print(currentWeight);
-    Serial.print("g, Need to dispense: ");
-    Serial.print(gramsToFeed);
     Serial.println("g");
     
-    // Chỉ cho ăn nếu cần thêm thức ăn
-    if (gramsToFeed > 0) {
-      motor_feedGrams(gramsToFeed);
+    // Chỉ cho ăn nếu chưa đủ thức ăn trong tô
+    if (currentWeight_g < autoFeedGrams) {
+      motor_startFeeding(autoFeedGrams);
     } else {
-      Serial.println("[Motor] Bowl still has enough food, skipping feed");
+      Serial.println("[Motor] Bowl already has enough food, skipping");
     }
   }
 }
 
 /**
  * Loop chính của motor - gọi trong main loop
+ * Non-blocking, không dùng delay()
  */
 void motor_loop() {
   // Xử lý cho ăn thủ công
-  if (motorManualTrigger) {
+  if (motorManualTrigger && !motorRunning) {
     motorManualTrigger = false;
-    motor_feedGrams(motorManualGrams);
+    
+    // Tính target = hiện tại + thêm vào
+    float target = currentWeight_g + motorManualGrams;
+    
+    Serial.print("[Motor] Manual feed: adding ");
+    Serial.print(motorManualGrams);
+    Serial.print("g to current ");
+    Serial.print(currentWeight_g);
+    Serial.print("g = target ");
+    Serial.print(target);
+    Serial.println("g");
+    
+    motor_startFeeding(target);
   }
+  
+  // Kiểm tra tiến trình feeding (đã đạt target chưa?)
+  motor_checkFeedingProgress();
   
   // Kiểm tra và thực hiện cho ăn tự động
   motor_checkAutoFeed();
