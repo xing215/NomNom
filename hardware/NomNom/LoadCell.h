@@ -3,7 +3,6 @@
 
 #include "libs.h"
 #include "mqtt.h"
-#include <Adafruit_HX711.h>
 
 // ------------ Pins (change to match your wiring) ------------
 #define LOADCELL_DATA_PIN  D5      // HX711 DATA

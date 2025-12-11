@@ -4,6 +4,7 @@
 #include "LimitSwitch.h"
 #include "DHT11.h"
 #include "tof.h"
+#include "LoadCell.h"
 
 void setup() {
   Serial.begin(9600);
@@ -11,6 +12,7 @@ void setup() {
   LimitSwitch_setup();
   tof_setup();
   DHT11_setup();
+  LoadCell_setup();
 }
 
 void loop() {
@@ -18,4 +20,5 @@ void loop() {
   LimitSwitch_loop();
   tof_loop();
   DHT11_loop();
+  LoadCell_loop();
 }
