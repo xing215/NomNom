@@ -3,14 +3,25 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+
+// WiFi & MQTT Configuration
 const char * SSID = "Nomnom";
 const char * PASSWORD = "nomnomnom";
 const char * BROKER = "broker.hivemq.com";
 const int PORT = 1883;
 const String TOPIC_BASE = "/23CLC03/NomNom";
 
+// MQTT Topics cho Motor Control
+const String TOPIC_MANUAL_FEED = TOPIC_BASE + "/motor/manual_feed";      // Topic nhận lệnh cho ăn thủ công
+const String TOPIC_AUTO_FEED_CONFIG = TOPIC_BASE + "/motor/auto_feed_config";  // Topic nhận config cho ăn tự động
+const String TOPIC_MOTOR_STATUS = TOPIC_BASE + "/motor/status";          // Topic publish trạng thái motor
+
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
+
+// Forward declarations cho motor functions
+extern void motor_processManualFeed(String payload);
+extern void motor_processAutoFeedConfig(String payload);
 
 void mqtt_wifiConnect() {
   WiFi.begin(SSID, PASSWORD);
@@ -19,21 +30,39 @@ void mqtt_wifiConnect() {
     Serial.print(".");
   }
   Serial.println("");
-  Serial.println("Connected!");
+  Serial.println("[WiFi] Connected!");
+  Serial.print("[WiFi] IP Address: ");
+  Serial.println(WiFi.localIP());
 }
+
+void mqtt_subscribeTopics() {
+  // Subscribe các topic cho motor control
+  mqttClient.subscribe(TOPIC_MANUAL_FEED.c_str());
+  Serial.print("[MQTT] Subscribed to: ");
+  Serial.println(TOPIC_MANUAL_FEED);
+  
+  mqttClient.subscribe(TOPIC_AUTO_FEED_CONFIG.c_str());
+  Serial.print("[MQTT] Subscribed to: ");
+  Serial.println(TOPIC_AUTO_FEED_CONFIG);
+}
+
 void mqtt_mqttConnect() {
   while(!mqttClient.connected()) {
-    Serial.println("Attemping MQTT connection...");
-    String clientId = "ESP32Client-" + String(random(0xffff), HEX);
+    Serial.println("[MQTT] Attempting connection...");
+    String clientId = "NomNom-" + String(random(0xffff), HEX);
     if(mqttClient.connect(clientId.c_str())) {
-      Serial.println("connected");
-
-      // mqttClient.subscribe("topic"));
-     
+      Serial.println("[MQTT] Connected!");
+      
+      // Subscribe các topic cần thiết
+      mqtt_subscribeTopics();
+      
+      // Publish thông báo đã online
+      mqttClient.publish((TOPIC_BASE + "/status").c_str(), "online", true);
     }
     else {
+      Serial.print("[MQTT] Connection failed, rc=");
       Serial.print(mqttClient.state());
-      Serial.println("try again in 5 seconds");
+      Serial.println(" - Retrying in 5 seconds...");
       delay(5000);
     }
   }
@@ -50,29 +79,47 @@ void mqtt_publish(String subtopic, String data, bool retain = true)
 }
 
 void mqtt_callback(char* topic, byte* message, unsigned int length) {
-  Serial.println(topic);
+  String topicStr = String(topic);
   String msg;
-  for(int i=0; i<length; i++) {
+  for(int i = 0; i < length; i++) {
     msg += (char)message[i];
   }
+  
+  Serial.print("[MQTT] Received on topic: ");
+  Serial.println(topicStr);
+  Serial.print("[MQTT] Payload: ");
   Serial.println(msg);
 
-  //***Code here to process the received package***
-
+  // Xử lý message theo topic
+  if (topicStr == TOPIC_MANUAL_FEED) {
+    // Lệnh cho ăn thủ công từ backend
+    motor_processManualFeed(msg);
+  }
+  else if (topicStr == TOPIC_AUTO_FEED_CONFIG) {
+    // Cấu hình cho ăn tự động từ backend
+    motor_processAutoFeedConfig(msg);
+  }
 }
 
 void mqtt_setup() {
-  Serial.print("Connecting to WiFi");
+  Serial.print("[WiFi] Connecting");
 
   mqtt_wifiConnect();
+  
   mqttClient.setServer(BROKER, PORT);
   mqttClient.setCallback(mqtt_callback);
   mqttClient.setKeepAlive(90);
+  mqttClient.setBufferSize(1024);  // Tăng buffer size cho JSON messages
+  
+  Serial.println("[MQTT] Setup completed");
 }
 
 void mqtt_loop() {
+  static unsigned long lastPublish = 0;
+  unsigned long now = millis();
+  
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Reconnecting to WiFi");
+    Serial.print("[WiFi] Reconnecting");
     mqtt_wifiConnect();
   }
 
@@ -82,11 +129,14 @@ void mqtt_loop() {
 
   mqttClient.loop();
 
-  //***Publish data to MQTT Server***
-  mqtt_publish("/temperature", "helo");
-  
-
-  delay(5000);
+  // Publish sensor data mỗi 5 giây (có thể sửa theo nhu cầu)
+  if (now - lastPublish >= 5000UL) {
+    lastPublish = now;
+    
+    // Publish dữ liệu sensors ở đây nếu cần
+    // mqtt_publish("/temperature", String(temperature));
+    // mqtt_publish("/humidity", String(humidity));
+  }
 }
 
 #endif
