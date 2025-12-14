@@ -2,9 +2,7 @@
 #define MOTOR_H
 
 #include "libs.h"
-
-#define MOTOR_PIN D7
-#define MOTOR_SPEED 1023  // PWM speed (0-1023 cho ESP8266)
+#include "config.h"
 
 // ============== BIẾN TOÀN CỤC CHO MOTOR ==============
 // Trạng thái motor
@@ -23,52 +21,35 @@ unsigned long lastAutoFeedTime = 0;     // Thời điểm cho ăn tự động l
 
 // Timeout để tránh motor chạy mãi
 unsigned long motorStartTime = 0;
-#define MOTOR_TIMEOUT_MS 30000  // Tối đa 30 giây
 
-/**
- * Khởi tạo motor
- */
-void motor_setup() {
+void Motor_setup() {
   pinMode(MOTOR_PIN, OUTPUT);
   analogWrite(MOTOR_PIN, 0);
-  
   Serial.println("[Motor] Initialized");
 }
 
-/**
- * Bắt đầu chạy motor để đạt target gram trong tô
- * Motor sẽ chạy cho đến khi loadcell đọc được >= targetGrams
- * @param targetGrams Số gram mục tiêu cần có trong tô
- */
+//Feed until target weight is met
 void motor_startFeeding(float targetGrams) {
   motorTargetGrams = targetGrams;
   motorRunning = true;
   motorStartTime = millis();
   
-  analogWrite(MOTOR_PIN, MOTOR_SPEED);
+  analogWrite(MOTOR_PIN, motor_speed);
   
   Serial.print("[Motor] Started feeding, target: ");
   Serial.print(targetGrams);
   Serial.println("g in bowl");
 }
 
-/**
- * Dừng motor
- */
+//Stop motor
 void motor_stopFeeding() {
   motorRunning = false;
   motorTargetGrams = 0;
-  
   analogWrite(MOTOR_PIN, 0);
-  
   Serial.println("[Motor] Stopped");
 }
 
-/**
- * Xử lý lệnh cho ăn thủ công từ MQTT
- * Format JSON: {"action": "feed", "grams": 15}
- * @param payload JSON string từ MQTT
- */
+//Manual feed from MQTT
 void motor_processManualFeed(String payload) {
   Serial.print("[Motor] Manual feed command: ");
   Serial.println(payload);
@@ -141,7 +122,7 @@ void motor_processAutoFeedConfig(String payload) {
 
 /**
  * Kiểm tra motor đang chạy và dừng khi đạt target
- * Sử dụng biến global currentWeight_g từ LoadCell.h
+ * Sử dụng biến global current_weight_g từ LoadCell.h
  */
 void motor_checkFeedingProgress() {
   if (!motorRunning) {
@@ -151,17 +132,17 @@ void motor_checkFeedingProgress() {
   unsigned long now = millis();
   
   // Kiểm tra timeout để tránh motor chạy mãi
-  if (now - motorStartTime >= MOTOR_TIMEOUT_MS) {
+  if (now - motorStartTime >= motor_timeout) {
     Serial.println("[Motor] TIMEOUT! Force stop");
     motor_stopFeeding();
     return;
   }
   
   // Đọc cân nặng hiện tại từ biến global của LoadCell.h
-  // currentWeight_g được khai báo trong LoadCell.h
-  if (currentWeight_g >= motorTargetGrams) {
+  // current_weight_g được khai báo trong LoadCell.h
+  if (current_weight_g >= motorTargetGrams) {
     Serial.print("[Motor] Target reached! Current: ");
-    Serial.print(currentWeight_g);
+    Serial.print(current_weight_g);
     Serial.print("g >= Target: ");
     Serial.print(motorTargetGrams);
     Serial.println("g");
@@ -186,36 +167,31 @@ void motor_checkAutoFeed() {
     
     Serial.println("[Motor] Auto feed triggered by interval");
     Serial.print("[Motor] Current in bowl: ");
-    Serial.print(currentWeight_g);
+    Serial.print(current_weight_g);
     Serial.print("g, Target: ");
     Serial.print(autoFeedGrams);
     Serial.println("g");
     
     // Chỉ cho ăn nếu chưa đủ thức ăn trong tô
-    if (currentWeight_g < autoFeedGrams) {
+    if (current_weight_g < autoFeedGrams) {
       motor_startFeeding(autoFeedGrams);
     } else {
       Serial.println("[Motor] Bowl already has enough food, skipping");
     }
   }
 }
-
-/**
- * Loop chính của motor - gọi trong main loop
- * Non-blocking, không dùng delay()
- */
-void motor_loop() {
-  // Xử lý cho ăn thủ công
+void Motor_loop() {
+  // Manual_Feeding
   if (motorManualTrigger && !motorRunning) {
     motorManualTrigger = false;
     
-    // Tính target = hiện tại + thêm vào
-    float target = currentWeight_g + motorManualGrams;
+    // Cal weight of food bowl
+    float target = current_weight_g + motorManualGrams;
     
     Serial.print("[Motor] Manual feed: adding ");
     Serial.print(motorManualGrams);
     Serial.print("g to current ");
-    Serial.print(currentWeight_g);
+    Serial.print(current_weight_g);
     Serial.print("g = target ");
     Serial.print(target);
     Serial.println("g");
@@ -223,10 +199,10 @@ void motor_loop() {
     motor_startFeeding(target);
   }
   
-  // Kiểm tra tiến trình feeding (đã đạt target chưa?)
+  // Check feeding progress
   motor_checkFeedingProgress();
   
-  // Kiểm tra và thực hiện cho ăn tự động
+  // Auto feeding
   motor_checkAutoFeed();
 }
 

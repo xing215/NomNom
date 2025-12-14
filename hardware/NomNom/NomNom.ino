@@ -9,6 +9,11 @@
 unsigned long dht_upload_time = 3600000;
 unsigned long ls_cooldown = 300000;
 unsigned long tof_empty_storage = 5000;
+int motor_speed = 1023;
+unsigned long motor_timeout = 10000;
+float current_weight_g = 0.0;
+float max_weight = 1000.0;
+unsigned long loadcell_upload_time = 10000;
 
 void setup() {
   Serial.begin(9600);
@@ -17,7 +22,7 @@ void setup() {
   ToF_setup();
   DHT11_setup();
   LoadCell_setup();
-  motor_setup();
+  Motor_setup();
 }
 
 void loop() {
@@ -26,5 +31,5 @@ void loop() {
   ToF_loop();
   DHT11_loop();
   LoadCell_loop();
-  motor_loop();
+  Motor_loop();
 }

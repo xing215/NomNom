@@ -30,8 +30,8 @@ void ToF_setup() {
 void ToF_loop() {
   int distance = _tof_getDistance();
   
-  if (!TOF_SUCCESS)
-    Serial.println("Failed to boot VL53L0X");
+  if (!TOF_SUCCESS) 
+  Serial.println("Failed to boot VL53L0X");
   else if (distance == -1)
     Serial.println("Distance is too far");
   else if (distance >= tof_empty_storage) {
