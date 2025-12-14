@@ -2,7 +2,7 @@
 #define LOADCELL_H
 
 #include "libs.h"
-#include "mqtt.h"
+#include "config.h"
 
 // ------------ Pins (change to match your wiring) ------------
 #define LOADCELL_DATA_PIN  D5      // HX711 DATA
@@ -69,7 +69,7 @@ void LoadCell_loop() {
 
     bool overload = (weight_g > LOADCELL_MAX_WEIGHT_G * 1.05f);
 
-    // ---- Build JSON payload ----
+    //JSON building
     String json_loadcell = "{";
     json_loadcell += "\"weight_g\": ";
     json_loadcell += weight_g;          // ex: 253.42
@@ -79,10 +79,9 @@ void LoadCell_loop() {
     json_loadcell += overload ? "true" : "false";
     json_loadcell += "}";
 
-    // Publish via MQTT
+    //Publish
     mqtt_publish("/loadcell", json_loadcell);
 
-    // Debug to Serial
     Serial.print("Loadcell: ");
     Serial.print(weight_g);
     Serial.print(" g, raw = ");

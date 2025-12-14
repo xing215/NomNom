@@ -2,7 +2,6 @@
 #define MOTOR_H
 
 #include "libs.h"
-#include <ArduinoJson.h>
 
 #define MOTOR_PIN D7
 #define MOTOR_SPEED 1023  // PWM speed (0-1023 cho ESP8266)
