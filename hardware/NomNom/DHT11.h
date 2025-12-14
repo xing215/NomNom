@@ -2,23 +2,21 @@
 #define DHT11_H
 
 #include "libs.h"
-#include "mqtt.h"
+#include "config.h"
 
-#define DHTPIN  D7
-#define DHTTYPE DHT11
-
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht(DHT_PIN, DHT_TYPE);
 
 void DHT11_setup() {
   dht.begin();
+  Serial.println("DHT sensor started");
 }
 
 void DHT11_loop() {
   static unsigned long dht_time = 0;
   unsigned long now = millis();
 
-  // run every 10 seconds
-  if (now - dht_time >= 10000UL) {
+  // run every assigned time, check in NomNom.ino
+  if (now - dht_time >= dht_upload_time) {
     dht_time = now;    // update timer
 
     float h = dht.readHumidity();
@@ -29,14 +27,15 @@ void DHT11_loop() {
       return;
     }
 
-    // --- JSON building (using String) ---
+    //JSON building
     String json = "{";
     json += "\"humidity\": ";
-    json += h;                 // e.g. 55.3
+    json += h;
     json += ", \"temperature\": ";
-    json += t;                 // e.g. 28.7
+    json += t;
     json += "}";
 
+    //Publish
     mqtt_publish("/humid", json);
 
     Serial.print("Humidity: ");

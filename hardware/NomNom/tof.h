@@ -2,19 +2,15 @@
 #define TOF_H
 
 #include "libs.h"
-#include "mqtt.h"
+#include "config.h"
 
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
-#define EMPTY_DISTANCE 5000 // 5000 mm = 5m
-
 static bool TOF_SUCCESS = false;
 
-int tof_getDistance() {
+int _tof_getDistance() {
   VL53L0X_RangingMeasurementData_t measure;
-    
   lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-
   if (measure.RangeStatus != 4) {  // phase failures have incorrect data
     return measure.RangeMilliMeter;
   } else {
@@ -22,31 +18,30 @@ int tof_getDistance() {
   }
 }
 
-void tof_setup() {
+void ToF_setup() {
   if (!lox.begin()) {
-    Serial.println(F("Failed to boot VL53L0X"));
+    Serial.println("Failed to boot VL53L0X");
     TOF_SUCCESS = false;
   }
   else
     TOF_SUCCESS = true;
 }
 
-void tof_loop() {
-  int distance = tof_getDistance();
-  // Serial.print("TOF: ");
-  // Serial.println(distance);
+void ToF_loop() {
+  int distance = _tof_getDistance();
+  
   if (!TOF_SUCCESS)
     Serial.println("Failed to boot VL53L0X");
   else if (distance == -1)
     Serial.println("Distance is too far");
-  else if (distance >= EMPTY_DISTANCE) {
+  else if (distance >= tof_empty_storage) {
     Serial.print("Sending empty storage warning with distance = ");
     Serial.println(distance);
     String formatedData = "{\"distance\":";
     formatedData += distance;
     formatedData += "}";
     mqtt_publish("/tof", formatedData);
-  }
+  } //Bổ sung hàm publish data phần trăm còn lại trong hộp
 }
 
 #endif

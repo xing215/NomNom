@@ -1,19 +1,20 @@
 #include "libs.h"
-#include "mqtt.h"
-#include "motor.h"
 
+#include "Motor.h"
 #include "LimitSwitch.h"
 #include "DHT11.h"
-#include "tof.h"
+#include "ToF.h"
 #include "LoadCell.h"
-#include "motor.h"
+
+unsigned long dht_upload_time = 3600000;
+unsigned long ls_cooldown = 300000;
+unsigned long tof_empty_storage = 5000;
 
 void setup() {
   Serial.begin(9600);
   mqtt_setup();
-  motor_setup();
   LimitSwitch_setup();
-  tof_setup();
+  ToF_setup();
   DHT11_setup();
   LoadCell_setup();
   motor_setup();
@@ -21,10 +22,9 @@ void setup() {
 
 void loop() {
   mqtt_loop();
-  motor_loop();
   LimitSwitch_loop();
-  tof_loop();
+  ToF_loop();
   DHT11_loop();
-  LoadCell_loop();  // Đọc loadcell trước
-  motor_loop();     // Motor kiểm tra loadcell sau
+  LoadCell_loop();
+  motor_loop();
 }
