@@ -2,10 +2,54 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-
-export const dynamic = 'force-static';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      // Login successful - redirect to main
+      router.push('/main');
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative w-full md:h-screen h-[90vh] bg-[#f4dfdf] flex items-center justify-center overflow-hidden p-[10px]">
       {/* Background decorations */}
@@ -64,7 +108,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main form content */}
-      <div className="relative z-10 flex flex-col items-center gap-[70px] md:gap-[24px] p-[10px] w-full max-w-md md:max-w-none">
+      <form onSubmit={handleSubmit} className="relative z-10 flex flex-col items-center gap-[70px] md:gap-[24px] p-[10px] w-full max-w-md md:max-w-none">
         <div className="flex flex-col items-center text-center gap-2">
           <Link href="/">
             <h1 className="font-bold text-[40px] md:text-[50px] text-[#390202] md:leading-tight md:mb-[12px] cursor-pointer hover:opacity-80 transition-opacity">
@@ -79,6 +123,12 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg text-center max-w-[332px] md:max-w-[480px]">
+            {error}
+          </div>
+        )}
+
         <div className="flex flex-col gap-[30px] md:gap-[28px] items-center px-[30px] md:px-0 w-full">
           <div className="flex flex-col items-center gap-[20px] md:gap-[12px] w-full">
             <label htmlFor="email" className="font-semibold text-[24px] md:text-[20px] text-[#390202] text-center">
@@ -88,6 +138,9 @@ export default function LoginPage() {
               id="email"
               type="email"
               placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
               className="w-full max-w-[332px] md:max-w-[480px] h-[53px] md:h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[18px] md:rounded-[16px] px-[15px] md:px-[18px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
             />
           </div>
@@ -100,19 +153,24 @@ export default function LoginPage() {
               id="password"
               type="password"
               placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
               className="w-full max-w-[332px] md:max-w-[480px] h-[53px] md:h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[18px] md:rounded-[16px] px-[15px] md:px-[18px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
             />
           </div>
 
-          <Link href="/main" className="mt-2">
-            <div className="bg-[#ff9797] rounded-[14.612px] md:rounded-[12px] px-[60px] md:px-[48px] py-[15px] md:py-[12px] flex items-center justify-center cursor-pointer hover:bg-[#ff8585] transition-colors">
-              <p className="font-semibold text-[24px] md:text-[20px] text-black text-center">
-                FIND
-              </p>
-            </div>
-          </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 bg-[#ff9797] rounded-[14.612px] md:rounded-[12px] px-[60px] md:px-[48px] py-[15px] md:py-[12px] flex items-center justify-center cursor-pointer hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <p className="font-semibold text-[24px] md:text-[20px] text-black text-center">
+              {loading ? 'LOGGING IN...' : 'LOG IN'}
+            </p>
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
