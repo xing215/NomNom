@@ -8,7 +8,7 @@
 
 unsigned long dht_upload_time = 3600000;
 unsigned long ls_cooldown = 300000;
-unsigned long tof_empty_storage = 5000;
+unsigned long tof_upload_time = 5000;
 
 void setup() {
   Serial.begin(9600);
