@@ -14,4 +14,18 @@ extern unsigned long ls_cooldown;
 //ToF
 extern unsigned long tof_upload_time;
 
+//Motor
+#define MOTOR_PIN D7
+extern int motor_speed;
+extern unsigned long motor_timeout;
+
+
+//Loadcell
+#define LOADCELL_DATA_PIN  D5
+#define LOADCELL_SCK_PIN   D6
+extern float current_weight_g;
+extern float max_weight;
+extern unsigned long loadcell_upload_time;
+
+
 #endif

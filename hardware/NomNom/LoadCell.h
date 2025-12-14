@@ -4,39 +4,17 @@
 #include "libs.h"
 #include "config.h"
 
-// ------------ Pins (change to match your wiring) ------------
-#define LOADCELL_DATA_PIN  D5      // HX711 DATA
-#define LOADCELL_SCK_PIN   D6      // HX711 SCK
-
-// 1 kg loadcell (max ~1000 g)
-#define LOADCELL_MAX_WEIGHT_G   1000.0f
-
 // ---- Calibration factor ----
 // You MUST tune this so that weight_g comes out in grams.
 // Start with something like 100000.0f and adjust after testing.
 #define LOADCELL_CAL_FACTOR     100000.0f   // TODO: change after calibration
 
-// Global HX711 object (Adafruit lib)
 Adafruit_HX711 hx711(LOADCELL_DATA_PIN, LOADCELL_SCK_PIN);
-
-// Lưu giá trị cân nặng hiện tại để các module khác đọc
-float currentWeight_g = 0.0f;
-
-/**
- * Lấy khối lượng thức ăn còn trong tô (gram)
- * @return Khối lượng tính bằng gram
- */
-float LoadCell_getWeight() {
-  return currentWeight_g;
-}
 
 void LoadCell_setup() {
   Serial.println("HX711 (Adafruit_HX711) loadcell init");
-
-  // Initialize HX711
   hx711.begin();
 
-  // Tare channel A (set current reading as zero)
   Serial.println("Tareing loadcell...");
   
   for (uint8_t t = 0; t < 3; t++) {
@@ -51,8 +29,7 @@ void LoadCell_loop() {
   static unsigned long lc_time = 0;
   unsigned long now = millis();
 
-  // Read every 500 ms
-  if (now - lc_time >= 500UL) {
+  if (now - lc_time >= loadcell_upload_time) {
     lc_time = now;
 
     // Blocking read on channel A, gain 128
@@ -65,9 +42,9 @@ void LoadCell_loop() {
     if (weight_g < 0) weight_g = 0;
     
     // Cập nhật biến global để các module khác đọc được
-    currentWeight_g = weight_g;
+    current_weight_g = weight_g;
 
-    bool overload = (weight_g > LOADCELL_MAX_WEIGHT_G * 1.05f);
+    bool overload = (weight_g > max_weight * 1.05f);
 
     //JSON building
     String json_loadcell = "{";
