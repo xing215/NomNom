@@ -12,7 +12,7 @@ extern unsigned long dht_upload_time;
 extern unsigned long ls_cooldown;
 
 //ToF
-extern unsigned long tof_empty_storage;
+extern unsigned long tof_upload_time;
 
 //Motor
 #define MOTOR_PIN D7

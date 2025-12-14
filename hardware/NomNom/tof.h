@@ -27,21 +27,27 @@ void ToF_setup() {
     TOF_SUCCESS = true;
 }
 
-void ToF_loop() {
+void ToF_sendDistance() {
   int distance = _tof_getDistance();
   
   if (!TOF_SUCCESS) 
   Serial.println("Failed to boot VL53L0X");
   else if (distance == -1)
     Serial.println("Distance is too far");
-  else if (distance >= tof_empty_storage) {
-    Serial.print("Sending empty storage warning with distance = ");
-    Serial.println(distance);
+  else {
     String formatedData = "{\"distance\":";
     formatedData += distance;
     formatedData += "}";
     mqtt_publish("/tof", formatedData);
-  } //Bổ sung hàm publish data phần trăm còn lại trong hộp
+  }
+}
+
+void ToF_loop() {
+  static unsigned long lastTime = 0;
+  if (millis() - lastTime > tof_upload_time) {
+    ToF_sendDistance();
+    lastTime = millis();
+  }
 }
 
 #endif

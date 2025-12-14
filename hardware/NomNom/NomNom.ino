@@ -9,6 +9,7 @@
 unsigned long dht_upload_time = 3600000;
 unsigned long ls_cooldown = 300000;
 unsigned long tof_empty_storage = 5000;
+unsigned long tof_upload_time = 5000;
 int motor_speed = 1023;
 unsigned long motor_timeout = 10000;
 float current_weight_g = 0.0;

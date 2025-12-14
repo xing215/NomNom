@@ -11,6 +11,7 @@ export default function ChatbotButton({ onClick }: ChatbotButtonProps) {
     <>
       {/* Desktop Button */}
       <button
+        title='Open Chatbot'
         onClick={onClick}
         className="hidden md:flex fixed right-[40px] bottom-[40px] bg-[#ff9797] rounded-[40px] px-[20px] py-[28px] hover:bg-[#ff8585] transition-colors shadow-lg z-40 items-center justify-center"
       >
@@ -19,6 +20,7 @@ export default function ChatbotButton({ onClick }: ChatbotButtonProps) {
 
       {/* Mobile Button */}
       <button
+        title='Open Chatbot'
         onClick={onClick}
         className="md:hidden fixed right-[16px] bottom-[40px] bg-[#ff9797] rounded-[40px] px-[18px] py-[24px] hover:bg-[#ff8585] transition-colors shadow-lg z-40 flex items-center justify-center"
       >
