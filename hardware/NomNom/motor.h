@@ -25,7 +25,7 @@ unsigned long motorStartTime = 0;
 void Motor_setup() {
   pinMode(MOTOR_PIN, OUTPUT);
   analogWrite(MOTOR_PIN, 0);
-  Serial.println("[Motor] Initialized");
+  Serial.println("[Motor]\tInitialized");
 }
 
 //Feed until target weight is met
@@ -36,7 +36,7 @@ void motor_startFeeding(float targetGrams) {
   
   analogWrite(MOTOR_PIN, motor_speed);
   
-  Serial.print("[Motor] Started feeding, target: ");
+  Serial.print("[Motor]\tStarted feeding, target: ");
   Serial.print(targetGrams);
   Serial.println("g in bowl");
 }
@@ -46,19 +46,19 @@ void motor_stopFeeding() {
   motorRunning = false;
   motorTargetGrams = 0;
   analogWrite(MOTOR_PIN, 0);
-  Serial.println("[Motor] Stopped");
+  Serial.println("[Motor]\tStopped");
 }
 
 //Manual feed from MQTT
 void motor_processManualFeed(String payload) {
-  Serial.print("[Motor] Manual feed command: ");
+  Serial.print("[Motor]\tManual feed command: ");
   Serial.println(payload);
   
   StaticJsonDocument<200> doc;
   DeserializationError error = deserializeJson(doc, payload);
   
   if (error) {
-    Serial.print("[Motor] JSON parse error: ");
+    Serial.print("[Motor]\tJSON parse error: ");
     Serial.println(error.c_str());
     // Nếu không parse được, vẫn cho ăn với gram mặc định
     motorManualTrigger = true;
@@ -71,7 +71,7 @@ void motor_processManualFeed(String payload) {
   if (strcmp(action, "feed") == 0) {
     motorManualTrigger = true;
     motorManualGrams = doc["grams"] | 10;  // Mặc định 10 gram
-    Serial.print("[Motor] Manual feed triggered, grams: ");
+    Serial.print("[Motor]\tManual feed triggered, grams: ");
     Serial.println(motorManualGrams);
   }
 }
@@ -87,14 +87,14 @@ void motor_processManualFeed(String payload) {
  * @param payload JSON string từ MQTT
  */
 void motor_processAutoFeedConfig(String payload) {
-  Serial.print("[Motor] Auto feed config: ");
+  Serial.print("[Motor]\tAuto feed config: ");
   Serial.println(payload);
   
   StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, payload);
   
   if (error) {
-    Serial.print("[Motor] Config JSON parse error: ");
+    Serial.print("[Motor]\tConfig JSON parse error: ");
     Serial.println(error.c_str());
     return;
   }
@@ -110,7 +110,7 @@ void motor_processAutoFeedConfig(String payload) {
   // Reset timer khi nhận config mới
   lastAutoFeedTime = millis();
   
-  Serial.println("[Motor] Auto feed config updated:");
+  Serial.println("[Motor]\tAuto feed config updated:");
   Serial.print("  - Enabled: ");
   Serial.println(autoFeedEnabled ? "Yes" : "No");
   Serial.print("  - Interval: ");
@@ -133,7 +133,7 @@ void motor_checkFeedingProgress() {
   
   // Kiểm tra timeout để tránh motor chạy mãi
   if (now - motorStartTime >= motor_timeout) {
-    Serial.println("[Motor] TIMEOUT! Force stop");
+    Serial.println("[Motor]\tTIMEOUT! Force stop");
     motor_stopFeeding();
     return;
   }
@@ -141,7 +141,7 @@ void motor_checkFeedingProgress() {
   // Đọc cân nặng hiện tại từ biến global của LoadCell.h
   // current_weight_g được khai báo trong LoadCell.h
   if (current_weight_g >= motorTargetGrams) {
-    Serial.print("[Motor] Target reached! Current: ");
+    Serial.print("[Motor]\tTarget reached! Current: ");
     Serial.print(current_weight_g);
     Serial.print("g >= Target: ");
     Serial.print(motorTargetGrams);
@@ -165,8 +165,8 @@ void motor_checkAutoFeed() {
   if (now - lastAutoFeedTime >= autoFeedIntervalMs) {
     lastAutoFeedTime = now;
     
-    Serial.println("[Motor] Auto feed triggered by interval");
-    Serial.print("[Motor] Current in bowl: ");
+    Serial.println("[Motor]\tAuto feed triggered by interval");
+    Serial.print("[Motor]\tCurrent in bowl: ");
     Serial.print(current_weight_g);
     Serial.print("g, Target: ");
     Serial.print(autoFeedGrams);
@@ -176,7 +176,7 @@ void motor_checkAutoFeed() {
     if (current_weight_g < autoFeedGrams) {
       motor_startFeeding(autoFeedGrams);
     } else {
-      Serial.println("[Motor] Bowl already has enough food, skipping");
+      Serial.println("[Motor]\tBowl already has enough food, skipping");
     }
   }
 }
@@ -188,7 +188,7 @@ void Motor_loop() {
     // Cal weight of food bowl
     float target = current_weight_g + motorManualGrams;
     
-    Serial.print("[Motor] Manual feed: adding ");
+    Serial.print("[Motor]\tManual feed: adding ");
     Serial.print(motorManualGrams);
     Serial.print("g to current ");
     Serial.print(current_weight_g);

@@ -12,17 +12,12 @@
 Adafruit_HX711 hx711(LOADCELL_DATA_PIN, LOADCELL_SCK_PIN);
 
 void LoadCell_setup() {
-  Serial.println("HX711 (Adafruit_HX711) loadcell init");
   hx711.begin();
-
-  Serial.println("Tareing loadcell...");
   
   for (uint8_t t = 0; t < 3; t++) {
     int32_t rawA = hx711.readChannelRaw(CHAN_A_GAIN_128);
     hx711.tareA(rawA);   // store baseline for channel A
   }
-
-  Serial.println("HX711 ready.");
 }
 
 void LoadCell_loop() {
@@ -59,11 +54,11 @@ void LoadCell_loop() {
     //Publish
     mqtt_publish("/loadcell", json_loadcell);
 
-    Serial.print("Loadcell: ");
+    Serial.print("[LoadCell]\tweight = ");
     Serial.print(weight_g);
     Serial.print(" g, raw = ");
     Serial.print(rawA);
-    if (overload) Serial.print("  [OVERLOAD!]");
+    if (overload) Serial.print("  OVERLOAD!");
     Serial.println();
   }
 }
