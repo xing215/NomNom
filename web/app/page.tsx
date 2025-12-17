@@ -16,13 +16,13 @@ export default function LandingPage() {
       {/* Image 7 - Logo */}
       <div className="absolute left-[241px] md:left-[44px] top-[26px] md:top-[30px] w-[140px] md:w-[200px] h-[44px] md:h-[62px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/8772ca63-d8f3-4343-b14e-67f2ba212280"
+          src="/images/wordmark.png"
           alt="NomNom Logo"
           fill
           className="object-cover md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/c05ab5c8-a236-41c0-9820-c3189fa9c10f"
+          src="/images/wordmark.png"
           alt="NomNom Logo"
           fill
           className="hidden md:block object-cover"
@@ -32,13 +32,13 @@ export default function LandingPage() {
       {/* Image 2 - Top decoration */}
       <div className="absolute left-10 md:left-[calc(60%+160px)] top-[48px] md:top-[60px] md:-translate-x-1/2 w-[162px] md:w-[220px] h-[85.89px] md:h-[118px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/d4e3c3f8-d87e-4bf3-a743-24952b84ef9c"
+          src="/images/cat-tree.png"
           alt="Cat decoration"
           fill
           className="object-cover md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/c17bcf13-b7bc-4a26-a458-cafbb25f4873"
+          src="/images/cat-tree.png"
           alt="Cat decoration"
           fill
           className="hidden md:block object-cover"
@@ -50,7 +50,7 @@ export default function LandingPage() {
         <div className="md:hidden rotate-[328.689deg] w-full h-full flex items-center justify-center">
           <div className="relative w-[136px] h-[67.429px]">
             <Image
-              src="https://www.figma.com/api/mcp/asset/141c7535-51f4-4905-a848-5d24e01e3aa4"
+              src="/images/landing-fish.png"
               alt="Cat decoration"
               fill
               className="object-cover"
@@ -58,7 +58,7 @@ export default function LandingPage() {
           </div>
         </div>
         <Image
-          src="https://www.figma.com/api/mcp/asset/d936e7cf-c73d-4a2c-b26b-ef5f85890361"
+          src="/images/landing-fish.png"
           alt="Cat decoration"
           fill
           className="hidden md:block object-cover"
@@ -72,7 +72,7 @@ export default function LandingPage() {
           <div className="relative w-[360px] h-[300px]">
             <div className="absolute inset-0 rotate-[14.079deg]">
               <Image
-                src="https://www.figma.com/api/mcp/asset/25e869f5-f0e7-4518-8d2d-5eba60c40400"
+                src="/images/landing-speech.png"
                 alt="Hungry cat"
                 fill
                 className="object-cover"
@@ -121,13 +121,13 @@ export default function LandingPage() {
       {/* Image 1 - Right/Bottom cat */}
       <div className="absolute bottom-0 left-0 md:left-auto md:right-0 w-[300px] md:w-[600px] h-[350px] md:h-[720px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/97878c1e-a944-4a35-ab15-215588a4182a"
+          src="/images/landing-cat.png"
           alt="Cat"
           fill
           className="object-cover transform scale-x-[-1] md:scale-x-100 md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/a8f9b469-032e-40ef-ba7b-74e7a0919402"
+          src="/images/landing-cat.png"
           alt="Cat"
           fill
           className="hidden md:block object-cover"
