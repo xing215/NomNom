@@ -63,7 +63,10 @@ const MQTT_HOST = process.env.MQTT_HOST ?? 'broker.hivemq.com';
 const MQTT_PORT = Number(process.env.MQTT_PORT ?? '1883');
 const MQTT_USERNAME = process.env.MQTT_USERNAME;
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD;
-const MQTT_TOPIC_BASE = process.env.MQTT_TOPIC_BASE ?? '/23CLC03/NomNom';
+
+// Device ID - identifies which NomNom device this web app connects to
+const MQTT_DEVICE_ID = process.env.MQTT_DEVICE_ID ?? 'device_001';
+const MQTT_TOPIC_BASE = process.env.MQTT_TOPIC_BASE ?? `/NomNom/${MQTT_DEVICE_ID}`;
 
 const MANUAL_FEED_TOPIC = `${MQTT_TOPIC_BASE}/motor/manual_feed`;
 const AUTO_FEED_TOPIC = `${MQTT_TOPIC_BASE}/motor/auto_feed_config`;
