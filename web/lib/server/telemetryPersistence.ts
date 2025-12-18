@@ -10,6 +10,12 @@ import {
   checkEnvironmentAbnormality,
   calculateFoodPercentage,
 } from '@/lib/server/pushsafer';
+import {
+  emailCatBegging,
+  emailLowFood,
+  emailAbnormalEnvironment,
+  emailAutoFeed,
+} from '@/lib/server/email';
 
 let persistenceBound = false;
 let lastCatBeggingNotification = 0;
@@ -22,6 +28,20 @@ let currentFeedGrams = 0;
 const CAT_BEGGING_COOLDOWN = 30 * 1000;       // 30 seconds (for testing)
 const LOW_FOOD_COOLDOWN = 60 * 60 * 1000;    // 1 hour
 const ENVIRONMENT_COOLDOWN = 30 * 60 * 1000;  // 30 minutes
+
+/**
+ * Get user email for the device
+ */
+async function getUserEmail(): Promise<string | null> {
+  try {
+    const { default: User } = await import('@/models/User');
+    const user = await User.findOne({ deviceId: 'NomNom-01' });
+    return user?.email || null;
+  } catch (error) {
+    console.error('[Email] Error getting user email:', error);
+    return null;
+  }
+}
 
 export function ensureTelemetryPersistence() {
   if (persistenceBound) {
@@ -76,6 +96,13 @@ export function ensureTelemetryPersistence() {
               notifyAbnormalEnvironment(temperature, humidity, abnormality).catch((err) => {
                 console.error('[Pushsafer] Failed to send environment notification:', err);
               });
+              // Also send email
+              const userEmail = await getUserEmail();
+              if (userEmail) {
+                emailAbnormalEnvironment(userEmail, temperature, humidity, abnormality).catch((err) => {
+                  console.error('[Email] Failed to send environment email:', err);
+                });
+              }
             }
           }
         }
@@ -125,6 +152,13 @@ export function ensureTelemetryPersistence() {
             notifyLowFood(distance, foodPercentage).catch((err) => {
               console.error('[Pushsafer] Failed to send low food notification:', err);
             });
+            // Also send email
+            const userEmail = await getUserEmail();
+            if (userEmail) {
+              emailLowFood(userEmail, distance, foodPercentage).catch((err) => {
+                console.error('[Email] Failed to send low food email:', err);
+              });
+            }
           }
         }
       }
@@ -160,6 +194,13 @@ export function ensureTelemetryPersistence() {
             }).catch((err) => {
               console.error('[Pushsafer] Failed to send cat begging notification:', err);
             });
+            // Also send email
+            const userEmail = await getUserEmail();
+            if (userEmail) {
+              emailCatBegging(userEmail).catch((err) => {
+                console.error('[Email] Failed to send cat begging email:', err);
+              });
+            }
           } else {
             console.log('[Pushsafer] Cat begging notification skipped due to cooldown');
           }
@@ -189,6 +230,13 @@ export function ensureTelemetryPersistence() {
               notifyAutoFeed(feedAmount).catch((err) => {
                 console.error('[Pushsafer] Failed to send auto-feed notification:', err);
               });
+              // Also send email
+              const userEmail = await getUserEmail();
+              if (userEmail) {
+                emailAutoFeed(userEmail, feedAmount).catch((err) => {
+                  console.error('[Email] Failed to send auto-feed email:', err);
+                });
+              }
             }
           }
           
