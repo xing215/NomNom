@@ -23,6 +23,7 @@ let lastLowFoodNotification = 0;
 let lastEnvironmentNotification = 0;
 let motorRunning = false;
 let currentFeedGrams = 0;
+let limitSwitchPreviouslyPressed = false;
 
 // Cooldown periods in milliseconds
 const CAT_BEGGING_COOLDOWN = 30 * 1000;       // 30 seconds (for testing)
@@ -181,12 +182,12 @@ export function ensureTelemetryPersistence() {
           
           console.log('[DB] Cat begging detected and saved to MongoDB');
           
-          // Send cat begging notification with cooldown
+          // Send cat begging notification only on rising edge (becomes pressed) with cooldown
           const now = Date.now();
           const timeSinceLastNotif = now - lastCatBeggingNotification;
           console.log('[Pushsafer] Cat begging - time since last notification:', timeSinceLastNotif, 'ms (cooldown:', CAT_BEGGING_COOLDOWN, 'ms)');
           
-          if (now - lastCatBeggingNotification > CAT_BEGGING_COOLDOWN) {
+          if (!limitSwitchPreviouslyPressed && now - lastCatBeggingNotification > CAT_BEGGING_COOLDOWN) {
             lastCatBeggingNotification = now;
             console.log('[Pushsafer] Sending cat begging notification...');
             notifyCatBegging().then((success) => {
@@ -202,9 +203,12 @@ export function ensureTelemetryPersistence() {
               });
             }
           } else {
-            console.log('[Pushsafer] Cat begging notification skipped due to cooldown');
+            console.log('[Pushsafer] Cat begging notification skipped due to cooldown or already pressed');
           }
         }
+        
+        // Update previous state
+        limitSwitchPreviouslyPressed = pressed;
       }
 
       // Handle motor status for auto-feed detection
