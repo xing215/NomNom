@@ -23,6 +23,23 @@ export async function POST(request: NextRequest) {
 
   try {
     await sendManualFeedCommand({ grams, note, source: 'web-app' });
+
+    // Mark the latest cat begging as triggered
+    try {
+      const { default: connectToDatabase } = await import('@/lib/mongodb');
+      const { default: CatBeggingLog } = await import('@/models/CatBeggingLog');
+      
+      await connectToDatabase();
+      
+      // Update the most recent begging log that hasn't been triggered yet
+      await CatBeggingLog.findOneAndUpdate(
+        { deviceId: 'NomNom-01', triggered: false },
+        { triggered: true },
+        { sort: { detectedAt: -1 } }
+      );
+    } catch (error) {
+      console.error('[DB] Error marking cat begging as triggered:', error);
+    }
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unable to publish MQTT message.' },

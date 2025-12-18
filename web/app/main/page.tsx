@@ -51,6 +51,8 @@ export default function MainPage() {
   const [feedStatus, setFeedStatus] = useState<FeedStatus>(null);
   const [telemetry, setTelemetry] = useState<TelemetryState>(null);
   const [telemetryError, setTelemetryError] = useState<string | null>(null);
+  const [showCatBubble, setShowCatBubble] = useState(false);
+  const [bubbleShownAt, setBubbleShownAt] = useState<number | null>(null);
 
   const loadTelemetry = useCallback(async () => {
     try {
@@ -95,9 +97,48 @@ export default function MainPage() {
     };
   }, [loadTelemetry]);
 
+  // Handle cat begging bubble visibility
+  useEffect(() => {
+    if (telemetry?.limitSwitchPressed) {
+      if (!showCatBubble) {
+        setShowCatBubble(true);
+        setBubbleShownAt(Date.now());
+      }
+    } else {
+      setShowCatBubble(false);
+      setBubbleShownAt(null);
+    }
+  }, [telemetry?.limitSwitchPressed, showCatBubble]);
+
+  // Hide bubble after 5 minutes
+  useEffect(() => {
+    if (!showCatBubble || !bubbleShownAt) return;
+
+    const fiveMinutes = 5 * 60 * 1000;
+    const timeElapsed = Date.now() - bubbleShownAt;
+    const timeRemaining = fiveMinutes - timeElapsed;
+
+    if (timeRemaining <= 0) {
+      setShowCatBubble(false);
+      setBubbleShownAt(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setShowCatBubble(false);
+      setBubbleShownAt(null);
+    }, timeRemaining);
+
+    return () => clearTimeout(timeoutId);
+  }, [showCatBubble, bubbleShownAt]);
+
   const handleFeed = useCallback(async (amount: number) => {
     setFeedStatus(null);
     setIsFeeding(true);
+    
+    // Hide cat bubble when feed is pressed
+    setShowCatBubble(false);
+    setBubbleShownAt(null);
 
     try {
       const response = await fetch('/api/mqtt/manual-feed', {
@@ -134,8 +175,17 @@ export default function MainPage() {
   }, [loadTelemetry]);
 
   const maxFoodCapacity = 500;
-  const currentFoodAmount = Math.max(0, Math.round(telemetry?.weightGrams ?? 0));
-  const foodPercentage = Math.min(100, Math.round((currentFoodAmount / maxFoodCapacity) * 100));
+  
+  // Calculate percentage from ToF distance (container fullness)
+  // ToF measures distance in mm, less distance = more food
+  // Assuming: 200mm = empty, 50mm = full (adjust these values based on your container)
+  const tofDistanceMm = telemetry?.distanceMm ?? 200;
+  const minDistance = 50; // Full container
+  const maxDistance = 200; // Empty container
+  const foodPercentage = Math.min(100, Math.max(0, Math.round(((maxDistance - tofDistanceMm) / (maxDistance - minDistance)) * 100)));
+  
+  // Use loadcell for bowl weight display (not for percentage)
+  const currentBowlWeight = Math.max(0, Math.round(telemetry?.weightGrams ?? 0));
 
   const humidityDisplay = telemetry?.humidity !== undefined && telemetry?.humidity !== null
     ? `${telemetry.humidity.toFixed(1)}%`
@@ -158,7 +208,7 @@ export default function MainPage() {
             {/* Food bowl meter */}
             <div className="relative z-100 mt-10 scale-75 md:scale-80 lg:scale-90">
               <FoodMeter 
-                currentAmount={currentFoodAmount}
+                currentAmount={Math.round((foodPercentage / 100) * maxFoodCapacity)}
                 maxAmount={maxFoodCapacity}
                 percentage={Number.isFinite(foodPercentage) ? foodPercentage : 0}
               />
@@ -175,6 +225,16 @@ export default function MainPage() {
                 </p>
               )}
             </div>
+
+            {/* Cat begging bubble */}
+            {showCatBubble && (
+              <div className="relative z-30 mb-4 animate-bounce">
+                <div className="bg-white rounded-2xl shadow-lg px-6 py-4 border-4 border-[#93b7d9] relative">
+                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></div>
+                  <p className="text-2xl font-bold text-[#390202] text-center">🐱 Meow! Feed me!</p>
+                </div>
+              </div>
+            )}
 
             {/* Cat decoration - only visible on desktop */}
 

@@ -74,3 +74,116 @@ export async function saveTelemetryRecord(record: TelemetryRecord) {
 
   console.log('[DB] Telemetry stored', record.topic, insertedAt);
 }
+
+export async function getLatestSensorData() {
+  try {
+    const mongoose = await import('mongoose');
+    const { default: SensorData } = await import('@/models/SensorData');
+    const { default: connectToDatabase } = await import('@/lib/mongodb');
+
+    await connectToDatabase();
+
+    const latestSensor = await SensorData.findOne()
+      .sort({ recordedAt: -1 })
+      .limit(1)
+      .lean()
+      .exec();
+
+    if (!latestSensor) {
+      return null;
+    }
+
+    return {
+      temperature: latestSensor.temperature,
+      humidity: latestSensor.humidity,
+      recordedAt: latestSensor.recordedAt?.toISOString() ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[DB] Error fetching latest sensor data:', error);
+    return null;
+  }
+}
+
+export async function getLatestBowlWeight() {
+  try {
+    const mongoose = await import('mongoose');
+    const { default: BowlWeight } = await import('@/models/BowlWeight');
+    const { default: connectToDatabase } = await import('@/lib/mongodb');
+
+    await connectToDatabase();
+
+    const latest = await BowlWeight.findOne()
+      .sort({ recordedAt: -1 })
+      .limit(1)
+      .lean()
+      .exec();
+
+    if (!latest) {
+      return null;
+    }
+
+    return {
+      weightGrams: latest.weight,
+      recordedAt: latest.recordedAt?.toISOString() ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[DB] Error fetching latest bowl weight:', error);
+    return null;
+  }
+}
+
+export async function getLatestContainerWeight() {
+  try {
+    const mongoose = await import('mongoose');
+    const { default: ContainerWeight } = await import('@/models/ContainerWeight');
+    const { default: connectToDatabase } = await import('@/lib/mongodb');
+
+    await connectToDatabase();
+
+    const latest = await ContainerWeight.findOne()
+      .sort({ recordedAt: -1 })
+      .limit(1)
+      .lean()
+      .exec();
+
+    if (!latest) {
+      return null;
+    }
+
+    return {
+      weightGrams: latest.weight,
+      recordedAt: latest.recordedAt?.toISOString() ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[DB] Error fetching latest container weight:', error);
+    return null;
+  }
+}
+
+export async function getLatestCatBegging() {
+  try {
+    const mongoose = await import('mongoose');
+    const { default: CatBeggingLog } = await import('@/models/CatBeggingLog');
+    const { default: connectToDatabase } = await import('@/lib/mongodb');
+
+    await connectToDatabase();
+
+    const latest = await CatBeggingLog.findOne()
+      .sort({ detectedAt: -1 })
+      .limit(1)
+      .lean()
+      .exec();
+
+    if (!latest) {
+      return null;
+    }
+
+    return {
+      detectedAt: latest.detectedAt?.toISOString() ?? new Date().toISOString(),
+      triggered: latest.triggered,
+    };
+  } catch (error) {
+    console.error('[DB] Error fetching latest cat begging:', error);
+    return null;
+  }
+}
