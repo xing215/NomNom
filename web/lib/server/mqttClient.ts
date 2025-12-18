@@ -174,10 +174,14 @@ function bindClientListeners(instance: MqttClient) {
     const key = topicKeyFromName.get(topic);
     let parsed: unknown;
 
+    console.log('[MQTT] Message received - Topic:', topic, 'Raw:', raw);
+
     if (raw.length) {
       try {
         parsed = JSON.parse(raw);
-      } catch {
+        console.log('[MQTT] Parsed:', parsed);
+      } catch (error) {
+        console.error('[MQTT] Failed to parse JSON:', error);
         parsed = undefined;
       }
     }
@@ -194,6 +198,7 @@ function bindClientListeners(instance: MqttClient) {
       updateTelemetrySummary(key, parsed);
     }
 
+    console.log('[MQTT] Notifying', mqttMessageListeners.size, 'listeners');
     notifyMessageListeners(message);
   });
 
