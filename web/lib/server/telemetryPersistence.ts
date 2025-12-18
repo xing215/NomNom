@@ -182,9 +182,28 @@ export function ensureTelemetryPersistence() {
           // Motor just stopped - feeding completed
           motorRunning = false;
           
+          const feedAmount = currentFeedGrams || grams;
+          
+          // Save feeding log to database
+          if (feedAmount > 0) {
+            try {
+              const { default: FeedingLog } = await import('@/models/FeedingLog');
+              
+              await FeedingLog.create({
+                deviceId: 'NomNom-01',
+                feedingType: source === 'auto' || source === 'automatic' || source === 'scheduled' ? 'automatic' : 'manual',
+                amount: feedAmount,
+                feedingTime: new Date(message.receivedAt),
+              });
+              
+              console.log('[DB] Feeding completed and logged:', { amount: feedAmount, type: source });
+            } catch (error) {
+              console.error('[DB] Error saving feeding log:', error);
+            }
+          }
+          
           // If this was an automatic feed (not manual), send notification
           if (source === 'auto' || source === 'automatic' || source === 'scheduled') {
-            const feedAmount = currentFeedGrams || grams;
             if (feedAmount > 0) {
               notifyAutoFeed(feedAmount).catch((err) => {
                 console.error('[Pushsafer] Failed to send auto-feed notification:', err);

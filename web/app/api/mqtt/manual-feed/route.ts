@@ -24,12 +24,22 @@ export async function POST(request: NextRequest) {
   try {
     await sendManualFeedCommand({ grams, note, source: 'web-app' });
 
-    // Mark the latest cat begging as triggered
+    // Save to database
     try {
       const { default: connectToDatabase } = await import('@/lib/mongodb');
       const { default: CatBeggingLog } = await import('@/models/CatBeggingLog');
+      const { default: FeedingLog } = await import('@/models/FeedingLog');
       
       await connectToDatabase();
+      
+      // Save feeding log
+      await FeedingLog.create({
+        deviceId: 'NomNom-01',
+        feedingType: 'manual',
+        amount: grams,
+        feedingTime: new Date(),
+        notes: note,
+      });
       
       // Update the most recent begging log that hasn't been triggered yet
       await CatBeggingLog.findOneAndUpdate(
@@ -37,8 +47,10 @@ export async function POST(request: NextRequest) {
         { triggered: true },
         { sort: { detectedAt: -1 } }
       );
+      
+      console.log('[DB] Manual feeding logged successfully');
     } catch (error) {
-      console.error('[DB] Error marking cat begging as triggered:', error);
+      console.error('[DB] Error saving feeding log:', error);
     }
   } catch (error) {
     return NextResponse.json(

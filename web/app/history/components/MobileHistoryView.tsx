@@ -34,6 +34,10 @@ type MobileHistoryViewProps = {
   hasHistoryEntries: boolean;
   onOpenSettings: () => void;
   onOpenChatbot: () => void;
+  onChartHover: (dayLabel: string | null) => void;
+  onChartLeave: () => void;
+  selectedDate: Date | null;
+  isHovering: boolean;
 };
 
 export default function MobileHistoryView({
@@ -54,7 +58,16 @@ export default function MobileHistoryView({
   hasHistoryEntries,
   onOpenSettings,
   onOpenChatbot,
+  onChartHover,
+  onChartLeave,
+  selectedDate,
+  isHovering,
 }: MobileHistoryViewProps) {
+  const formatSelectedDate = (date: Date) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  };
   return (
     <div className="md:hidden flex flex-col w-full min-h-screen bg-[#f4dfdf]">
       <Header nomCount={1} onSettingsClick={onOpenSettings} />
@@ -115,7 +128,11 @@ export default function MobileHistoryView({
         <div className="bg-[#f9d6d6] rounded-[8px] w-full p-[20px]">
           {hasWeekData ? (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ top: 10, right: 6, left: -10, bottom: 0 }}>
+              <BarChart 
+                data={chartData} 
+                margin={{ top: 10, right: 6, left: -10, bottom: 0 }}
+                onMouseLeave={onChartLeave}
+              >
                 <CartesianGrid stroke="#f4bcbc" vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="day"
@@ -141,7 +158,13 @@ export default function MobileHistoryView({
                   formatter={formatTooltipValue}
                   labelFormatter={formatTooltipLabel}
                 />
-                <Bar dataKey="grams" fill="#ff9797" radius={[12, 12, 0, 0]} barSize={32} />
+                <Bar 
+                  dataKey="grams" 
+                  fill="#ff9797" 
+                  radius={[12, 12, 0, 0]} 
+                  barSize={32}
+                  onMouseEnter={(data: any) => onChartHover(data.day)}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -153,6 +176,11 @@ export default function MobileHistoryView({
 
         {/* History Table - smaller */}
         <div className="bg-[#f9d6d6] rounded-[8px] w-full p-[20px]">
+          <div className="mb-3 text-[#390202] font-semibold text-[16px] text-center">
+            {isHovering && selectedDate
+              ? `Events for ${formatSelectedDate(selectedDate)}`
+              : 'Events for this week'}
+          </div>
           <div className="mx-auto w-full max-w-[560px] overflow-x-auto">
             <div className="min-w-[360px]">
               <div className="mx-auto flex w-full max-w-[360px] justify-center text-black">
@@ -163,18 +191,20 @@ export default function MobileHistoryView({
 
               <div className="mt-[16px] flex flex-col">
                 {hasHistoryEntries ? (
-                  historyEntries.map((entry) => (
+                  historyEntries.map((entry, index) => (
                     <div
-                      key={entry.timestamp}
+                      key={`${entry.timestamp}-${index}`}
                       className="mx-auto flex w-full max-w-[360px] justify-center py-[10px] text-black border-b border-black/30 last:border-b-0"
                     >
                       <p className="w-[160px] text-center font-normal text-[11px]">{formatHistoryTimestamp(entry.timestamp)}</p>
-                      <p className="w-[100px] text-center font-normal text-[11px]">{entry.grams}g</p>
+                      <p className="w-[100px] text-center font-normal text-[11px]">
+                        {entry.eventType === 'begging' ? '—' : `${entry.grams}g`}
+                      </p>
                       <p className="w-[100px] text-center font-normal text-[11px]">{entry.type}</p>
                     </div>
                   ))
                 ) : (
-                  <p className="text-[12px] text-center text-[#390202]">No data available</p>
+                  <p className="text-[12px] text-center text-[#390202]">No events for this date</p>
                 )}
               </div>
             </div>
