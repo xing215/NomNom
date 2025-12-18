@@ -52,7 +52,6 @@ export default function MainPage() {
   const [telemetry, setTelemetry] = useState<TelemetryState>(null);
   const [telemetryError, setTelemetryError] = useState<string | null>(null);
   const [showCatBubble, setShowCatBubble] = useState(false);
-  const [bubbleShownAt, setBubbleShownAt] = useState<number | null>(null);
 
   const loadTelemetry = useCallback(async () => {
     try {
@@ -82,7 +81,9 @@ export default function MainPage() {
     const poll = async () => {
       const result = await loadTelemetry();
       if (!active) return;
-      setTelemetry(result.summary);
+      if (JSON.stringify(result.summary) !== JSON.stringify(telemetry)) {
+        setTelemetry(result.summary);
+      }
       setTelemetryError(result.error);
     };
 
@@ -99,46 +100,12 @@ export default function MainPage() {
 
   // Handle cat begging bubble visibility
   useEffect(() => {
-    if (telemetry?.limitSwitchPressed) {
-      if (!showCatBubble) {
-        setShowCatBubble(true);
-        setBubbleShownAt(Date.now());
-      }
-    } else {
-      setShowCatBubble(false);
-      setBubbleShownAt(null);
-    }
-  }, [telemetry?.limitSwitchPressed, showCatBubble]);
-
-  // Hide bubble after 5 minutes
-  useEffect(() => {
-    if (!showCatBubble || !bubbleShownAt) return;
-
-    const fiveMinutes = 5 * 60 * 1000;
-    const timeElapsed = Date.now() - bubbleShownAt;
-    const timeRemaining = fiveMinutes - timeElapsed;
-
-    if (timeRemaining <= 0) {
-      setShowCatBubble(false);
-      setBubbleShownAt(null);
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setShowCatBubble(false);
-      setBubbleShownAt(null);
-    }, timeRemaining);
-
-    return () => clearTimeout(timeoutId);
-  }, [showCatBubble, bubbleShownAt]);
+    setShowCatBubble(telemetry?.limitSwitchPressed ?? false);
+  }, [telemetry?.limitSwitchPressed]);
 
   const handleFeed = useCallback(async (amount: number) => {
     setFeedStatus(null);
     setIsFeeding(true);
-    
-    // Hide cat bubble when feed is pressed
-    setShowCatBubble(false);
-    setBubbleShownAt(null);
 
     try {
       const response = await fetch('/api/mqtt/manual-feed', {
@@ -194,11 +161,16 @@ export default function MainPage() {
     ? `${telemetry.temperature.toFixed(1)}°C`
     : '--';
 
+
+  useEffect(() => {
+    console.log('Telemetry updated:', telemetry);
+  }, [telemetry]);
+
   return (
     <div className="flex flex-col w-full h-screen bg-[#f4dfdf] overflow-y-auto md:overflow-hidden hidden-scrollbar">
       <Header nomCount={1} onSettingsClick={() => setIsSettingsModalOpen(true)} />
       <div className="fixed left-0 md:left-10 bottom-0 z-100 scale-90 md:scale-80">
-         <CatDecoration />
+         <CatDecoration hungry={showCatBubble} />
       </div>
       
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden hidden-scrollbar">

@@ -121,6 +121,20 @@ function cloneSnapshot(): TelemetrySnapshot {
     topics[key] = { ...value };
   }
 
+  const summary = { ...telemetrySummary };
+
+  // If no limit switch message received in the last 10 seconds, assume not pressed
+  const limitSwitchMessage = telemetryTopics.limitSwitch;
+  if (limitSwitchMessage) {
+    const lastReceived = new Date(limitSwitchMessage.receivedAt).getTime();
+    const now = Date.now();
+    if (now - lastReceived > 10000) { // 10 seconds
+      summary.limitSwitchPressed = false;
+    }
+  } else {
+    summary.limitSwitchPressed = false;
+  }
+
   return {
     connection: {
       connected: isConnected,
@@ -128,7 +142,7 @@ function cloneSnapshot(): TelemetrySnapshot {
       lastMessageAt,
     },
     topics,
-    summary: { ...telemetrySummary },
+    summary,
   };
 }
 
@@ -294,6 +308,7 @@ function updateTelemetrySummary(key: TopicKey, parsed: unknown) {
   if (key === 'limitSwitch') {
     const pressed = (parsed as Record<string, unknown>).pressed;
     telemetrySummary.limitSwitchPressed = Boolean(pressed);
+    console.log('Limit switch updated:', telemetrySummary.limitSwitchPressed, 'from message:', parsed);
     return;
   }
 
