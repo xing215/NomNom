@@ -42,7 +42,7 @@ const PUSHSAFER_API_URL = 'https://www.pushsafer.com/api';
  * Can be configured via PUSHSAFER_KEY environment variable
  */
 export function getPushsaferKey(): string {
-  const key = process.env.PUSHSAFER_KEY || 'gB1ueRTD71zj1JsL0yZe';
+  const key = process.env.PUSHSAFER_KEY || '';
   return key;
 }
 

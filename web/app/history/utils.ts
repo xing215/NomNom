@@ -8,7 +8,10 @@ export type WeeklyChartPoint = {
 export type HistoryEntry = {
   timestamp: string;
   grams: number;
-  type: 'Scheduled' | 'Manual' | 'Top-up';
+  type: 'Scheduled' | 'Manual' | 'Top-up' | 'Cat Begging';
+  eventType?: 'feeding' | 'begging';
+  notes?: string;
+  triggered?: boolean;
 };
 
 export type WeekData = {
@@ -78,8 +81,22 @@ export function getStartOfIsoWeek(weekString: string): Date {
   const [yearPart, weekPart] = weekString.split('-W');
   const year = Number(yearPart);
   const week = Number(weekPart);
-  const simple = new Date(year, 0, 1 + (week - 1) * 7);
-  return getWeekStart(simple);
+  
+  // ISO week calculation: Find Thursday of week 1
+  // Week 1 is the week with January 4th
+  const jan4 = new Date(year, 0, 4);
+  const jan4Day = jan4.getDay() || 7; // Convert Sunday (0) to 7
+  
+  // Find the Monday of week 1 (4 days before Thursday, which is 3 days before)
+  const firstMonday = new Date(year, 0, 4 - (jan4Day - 1));
+  firstMonday.setHours(0, 0, 0, 0);
+  
+  // Add (week - 1) * 7 days to get to target week
+  const result = new Date(firstMonday);
+  result.setDate(firstMonday.getDate() + (week - 1) * 7);
+  result.setHours(0, 0, 0, 0);
+  
+  return result;
 }
 
 export function createEmptyWeekData(): WeeklyChartPoint[] {
