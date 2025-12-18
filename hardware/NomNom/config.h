@@ -15,7 +15,7 @@ extern unsigned long ls_cooldown;
 extern unsigned long tof_upload_time;
 
 //Motor
-#define MOTOR_PIN D7
+#define MOTOR_PIN D4
 extern int motor_speed;
 extern unsigned long motor_timeout;
 
