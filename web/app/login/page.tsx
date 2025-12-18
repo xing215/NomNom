@@ -62,13 +62,13 @@ export default function LoginPage() {
       {/* Image 9 - Left side cat */}
       <div className="absolute left-0 md:left-[40px] bottom-10 md:top-[301px] w-[177px] md:w-[299px] h-[340px] md:h-[574px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/6ef47083-dc79-4b87-8c22-0c340d23a0a0"
+          src="/images/cat-tree.png"
           alt="Cat decoration"
           fill
           className="object-cover md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/825c475f-9307-4c0a-bbd2-04964809aa41"
+          src="/images/cat-tree.png"
           alt="Cat decoration"
           fill
           className="hidden md:block object-cover"
@@ -78,13 +78,13 @@ export default function LoginPage() {
       {/* Image 10 - Bottom right */}
       <div className="absolute left-[335px] md:left-auto md:right-10 bottom-10 md:bottom-15 w-[109px] md:w-[280px] h-[71px] md:h-[200px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/a4312bf6-c211-4ae5-9cbc-422cd2b60844"
+          src="/images/cat-toy.png"
           alt="Cat decoration"
           fill
           className="object-cover md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/92d355cb-7ec5-439c-82b2-05cac69cebff"
+          src="/images/cat-toy.png"
           alt="Cat decoration"
           fill
           className="hidden md:block object-cover"
@@ -94,13 +94,13 @@ export default function LoginPage() {
       {/* Image 11 - Bottom */}
       <div className="absolute left-[239px] md:left-auto md:right-[400px] bottom-10 md:bottom-15 w-[56px] md:w-[120px] h-[40px] md:h-[80px]">
         <Image
-          src="https://www.figma.com/api/mcp/asset/659d0fa6-d89e-4bda-bc69-6c0beb787b4f"
+          src="/images/cat-bowl.png"
           alt="Cat decoration"
           fill
           className="object-cover md:hidden"
         />
         <Image
-          src="https://www.figma.com/api/mcp/asset/13f79933-56a7-4fcb-ad4d-bc35d51a0b0f"
+          src="/images/cat-bowl.png"
           alt="Cat decoration"
           fill
           className="hidden md:block object-cover"

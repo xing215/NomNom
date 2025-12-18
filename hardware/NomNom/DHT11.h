@@ -8,7 +8,6 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 void DHT11_setup() {
   dht.begin();
-  Serial.println("DHT sensor started");
 }
 
 void DHT11_loop() {
@@ -23,7 +22,7 @@ void DHT11_loop() {
     float t = dht.readTemperature(); // °C
 
     if (isnan(h) || isnan(t)) {
-      Serial.println("Failed to read from DHT sensor!");
+      Serial.println("[DHT11]\tFailed to read from DHT sensor!");
       return;
     }
 
@@ -38,7 +37,7 @@ void DHT11_loop() {
     //Publish
     mqtt_publish("/humid", json);
 
-    Serial.print("Humidity: ");
+    Serial.print("[DHT11]\tHumidity: ");
     Serial.print(h);
     Serial.print(" %\t");
     Serial.print("Temperature: ");
