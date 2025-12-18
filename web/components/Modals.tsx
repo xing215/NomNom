@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -172,13 +172,104 @@ interface ChatbotModalProps {
   onClose: () => void;
 }
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const PROMPT_SUGGESTIONS = [
+  'Mèo ăn bao nhiêu?',
+  'Nhiệt độ hiện tại?',
+  'Còn bao nhiêu thức ăn?',
+];
+
 export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (messageText?: string) => {
+    const text = messageText || input.trim();
+    if (!text || isLoading) return;
+
+    setInput('');
+    setIsLoading(true);
+
+    // Add user message
+    const newMessages: Message[] = [...messages, { role: 'user', content: text }];
+    setMessages(newMessages);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: newMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Không thể kết nối');
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+
+      // Add empty assistant message
+      setMessages([...newMessages, { role: 'assistant', content: '' }]);
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          assistantMessage += chunk;
+
+          // Update the last message with new content
+          setMessages([
+            ...newMessages,
+            { role: 'assistant', content: assistantMessage },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      setMessages([
+        ...newMessages,
+        { role: 'assistant', content: '❌ Đã xảy ra lỗi. Vui lòng thử lại.' },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-40 pointer-events-none">
       <div className="absolute bottom-[90px] md:bottom-[110px] right-[16px] md:right-[50px] pointer-events-auto drop-shadow-xl">
-        <div className="bg-[#f4dfdf] rounded-[16px] px-[18px] py-[24px] pb-[14px] flex flex-col gap-[32px] items-start relative w-[320px] max-h-[65vh]">
+        <div className="bg-[#f4dfdf] rounded-[16px] px-[18px] py-[24px] pb-[14px] flex flex-col gap-[16px] items-start relative w-[320px] h-[450px] max-h-[65vh]">
           {/* Close/back button */}
           <button
             onClick={onClose}
@@ -199,31 +290,81 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
           </button>
 
           <h2 className="font-bold text-[22px] text-[#390202] text-left w-full">
-            BONES
+            🐱 BONES
           </h2>
 
           {/* Chat messages area */}
-          <div className="flex-1 w-full min-h-[200px] flex flex-col gap-[18px] overflow-y-auto pr-1">
-            <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[20px] max-w-[192px]">
-              <p className="text-[14px] text-black">
-                Hello! How can I help you with feeding your pet today?
-              </p>
-            </div>
-            <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tl-[25px] p-[20px] max-w-[192px] ml-auto">
-              <p className="text-[14px] text-black">Hi!</p>
-            </div>
+          <div className="flex-1 w-full overflow-y-auto flex flex-col gap-[12px] pr-1">
+            {messages.length === 0 ? (
+              <div className="flex flex-col gap-2">
+                <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[16px] max-w-[200px]">
+                  <p className="text-[14px] text-black">
+                    Xin chào! Tôi là trợ lý chăm sóc mèo. Hỏi tôi bất cứ điều gì! 🐾
+                  </p>
+                </div>
+                {/* Prompt suggestions */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSend(suggestion)}
+                      className="text-xs bg-[#ff9797] hover:bg-[#ff8585] text-black px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              messages.map((message, idx) => (
+                <div
+                  key={idx}
+                  className={`${message.role === 'user'
+                    ? 'bg-[#ff9797] rounded-bl-[25px] rounded-br-[25px] rounded-tl-[25px] ml-auto'
+                    : 'bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px]'
+                    } p-[12px] max-w-[200px]`}
+                >
+                  <p className="text-[13px] text-black whitespace-pre-wrap">
+                    {message.content || (isLoading && message.role === 'assistant' ? '...' : '')}
+                  </p>
+                </div>
+              ))
+            )}
+            {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+              <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[12px] max-w-[200px]">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="flex gap-[12px] items-center w-full h-[40px]">
             <input
               type="text"
-              placeholder="Type a message..."
-              className="flex-1 h-full bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[12px] text-[15px] focus:outline-none focus:border-[#3d4ec4]"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Nhập tin nhắn..."
+              disabled={isLoading}
+              className="flex-1 h-full bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[12px] text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
             />
-            <button className="bg-[#ff9797] rounded-[12px] w-[40px] h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors" aria-label="Send message">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+            <button
+              onClick={() => handleSend()}
+              disabled={isLoading || !input.trim()}
+              className="bg-[#ff9797] rounded-[12px] w-[40px] h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Send message"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
@@ -231,3 +372,4 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
     </div>
   );
 }
+

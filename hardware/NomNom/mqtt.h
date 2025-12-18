@@ -9,7 +9,10 @@ const char * SSID = "Nomnom";
 const char * PASSWORD = "nomnomnom";
 const char * BROKER = "broker.hivemq.com";
 const int PORT = 1883;
-const String TOPIC_BASE = "/23CLC03/NomNom";
+
+// Device Configuration - Change this for each device
+const String DEVICE_ID = "device_001";  // Unique identifier for this device
+const String TOPIC_BASE = "/NomNom/" + DEVICE_ID;
 
 // MQTT Topics cho Motor Control
 const String TOPIC_MANUAL_FEED = TOPIC_BASE + "/motor/manual_feed";      // Topic nhận lệnh cho ăn thủ công
