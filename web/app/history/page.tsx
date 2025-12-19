@@ -226,7 +226,9 @@ export default function HistoryPage() {
         onOpenSettings={() => setIsSettingsModalOpen(true)}
         onOpenChatbot={() => setIsChatbotOpen(true)}
         onChartHover={handleChartHover}
+        onChartLeave={handleChartLeave}
         selectedDate={selectedDate}
+        isHovering={isHovering}
       />
 
       <SettingsModal

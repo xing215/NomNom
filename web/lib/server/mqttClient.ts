@@ -370,3 +370,7 @@ export async function sendAutoFeedConfig(config: AutoFeedConfig) {
 export function getTelemetrySnapshot(): TelemetrySnapshot {
   return cloneSnapshot();
 }
+
+export async function sendMqttMessage(topic: string, message: unknown) {
+  await publishJson(topic, message, { retain: false });
+}

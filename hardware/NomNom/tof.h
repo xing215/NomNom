@@ -19,6 +19,7 @@ int _tof_getDistance() {
 }
 
 void ToF_setup() {
+  delay(100);
   if (!lox.begin()) {
     Serial.println("[ToF]\tFailed to boot VL53L0X");
     TOF_SUCCESS = false;
@@ -28,6 +29,10 @@ void ToF_setup() {
 }
 
 void ToF_sendDistance() {
+  if (!TOF_SUCCESS) {
+    TOF_SUCCESS = lox.begin();
+  }
+
   int distance = _tof_getDistance();
   
   if (!TOF_SUCCESS) 
