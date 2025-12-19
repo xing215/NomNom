@@ -150,22 +150,23 @@ export default function MainPage() {
   }, [loadFeedingSchedule]);
 
   // Load settings
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const response = await fetch('/api/settings', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = await response.json() as SettingsResponse;
-        setSettings({
-          maxBowlCapacity: data.maxBowlCapacity || 500,
-          defaultTreatAmount: data.defaultTreatAmount || 100,
-        });
-      } catch (error) {
-        console.error('Failed to load settings:', error);
-      }
-    };
-    loadSettings();
+  const loadSettings = useCallback(async () => {
+    try {
+      const response = await fetch('/api/settings', { cache: 'no-store' });
+      if (!response.ok) return;
+      const data = await response.json() as SettingsResponse;
+      setSettings({
+        maxBowlCapacity: data.maxBowlCapacity || 500,
+        defaultTreatAmount: data.defaultTreatAmount || 100,
+      });
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const handleFeed = useCallback(async (amount: number) => {
     setFeedStatus(null);
@@ -354,7 +355,11 @@ export default function MainPage() {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
-        onSave={() => setIsSettingsModalOpen(false)}
+        onSave={() => {
+          loadSettings();
+          loadFeedingSchedule();
+          setIsSettingsModalOpen(false);
+        }}
       />
       <ChatbotModal
         isOpen={isChatbotOpen}
