@@ -1,16 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Edit3 } from 'lucide-react';
-import Header from '@/components/Header';
-import ChatbotButton from '@/components/ChatbotButton';
-import FoodMeter from '@/components/FoodMeter';
-import FeedInput from '@/components/FeedInput';
-import EnvironmentCard from '@/components/EnvironmentCard';
-import NomCard from '@/components/NomCard';
 import CatDecoration from '@/components/CatDecoration';
+import ChatbotButton from '@/components/ChatbotButton';
+import EnvironmentCard from '@/components/EnvironmentCard';
+import FeedInput from '@/components/FeedInput';
+import FoodMeter from '@/components/FoodMeter';
+import Header from '@/components/Header';
+import { ChatbotModal, NomsModal, SettingsModal } from '@/components/Modals';
+import NomCard from '@/components/NomCard';
 import SectionHeader from '@/components/SectionHeader';
-import { NomsModal, SettingsModal, ChatbotModal } from '@/components/Modals';
+import { useCallback, useEffect, useState } from 'react';
 
 export const dynamic = 'force-static';
 
@@ -43,6 +42,31 @@ interface ManualFeedResponse {
   [key: string]: unknown;
 }
 
+interface UpcomingFeeding {
+  time: string;
+  amount: number;
+  note: string;
+}
+
+interface FeedingHistoryItem {
+  id: string;
+  time: string;
+  amount: number;
+  note: string;
+  type: 'automatic' | 'manual';
+  timestamp: string;
+}
+
+interface FeedingScheduleResponse {
+  upcomingFeedings: UpcomingFeeding[];
+  feedingHistory: FeedingHistoryItem[];
+}
+
+interface SettingsResponse {
+  maxBowlCapacity: number;
+  defaultTreatAmount: number;
+}
+
 export default function MainPage() {
   const [isNomsModalOpen, setIsNomsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -52,6 +76,9 @@ export default function MainPage() {
   const [telemetry, setTelemetry] = useState<TelemetryState>(null);
   const [telemetryError, setTelemetryError] = useState<string | null>(null);
   const [showCatBubble, setShowCatBubble] = useState(false);
+  const [upcomingFeedings, setUpcomingFeedings] = useState<UpcomingFeeding[]>([]);
+  const [feedingHistory, setFeedingHistory] = useState<FeedingHistoryItem[]>([]);
+  const [settings, setSettings] = useState<SettingsResponse>({ maxBowlCapacity: 500, defaultTreatAmount: 100 });
 
   const loadTelemetry = useCallback(async () => {
     try {
@@ -103,6 +130,43 @@ export default function MainPage() {
     setShowCatBubble(telemetry?.limitSwitchPressed ?? false);
   }, [telemetry?.limitSwitchPressed]);
 
+  // Load feeding schedule
+  const loadFeedingSchedule = useCallback(async () => {
+    try {
+      const response = await fetch('/api/feeding-schedule', { cache: 'no-store' });
+      if (!response.ok) return;
+      const data = await response.json() as FeedingScheduleResponse;
+      setUpcomingFeedings(data.upcomingFeedings || []);
+      setFeedingHistory(data.feedingHistory || []);
+    } catch (error) {
+      console.error('Failed to load feeding schedule:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFeedingSchedule();
+    const intervalId = setInterval(loadFeedingSchedule, 30000); // Refresh every 30 seconds
+    return () => clearInterval(intervalId);
+  }, [loadFeedingSchedule]);
+
+  // Load settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json() as SettingsResponse;
+        setSettings({
+          maxBowlCapacity: data.maxBowlCapacity || 500,
+          defaultTreatAmount: data.defaultTreatAmount || 100,
+        });
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
   const handleFeed = useCallback(async (amount: number) => {
     setFeedStatus(null);
     setIsFeeding(true);
@@ -131,6 +195,8 @@ export default function MainPage() {
       const latest = await loadTelemetry();
       setTelemetry(latest.summary);
       setTelemetryError(latest.error);
+      // Refresh feeding schedule after manual feed
+      await loadFeedingSchedule();
     } catch (error) {
       setFeedStatus({
         type: 'error',
@@ -139,10 +205,10 @@ export default function MainPage() {
     } finally {
       setIsFeeding(false);
     }
-  }, [loadTelemetry]);
+  }, [loadTelemetry, loadFeedingSchedule]);
 
-  const maxFoodCapacity = 500;
-  
+  const maxFoodCapacity = settings.maxBowlCapacity;
+
   // Calculate percentage from ToF distance (container fullness)
   // ToF measures distance in mm, less distance = more food
   // Assuming: 200mm = empty, 50mm = full (adjust these values based on your container)
@@ -150,7 +216,7 @@ export default function MainPage() {
   const minDistance = 50; // Full container
   const maxDistance = 200; // Empty container
   const foodPercentage = Math.min(100, Math.max(0, Math.round(((maxDistance - tofDistanceMm) / (maxDistance - minDistance)) * 100)));
-  
+
   // Use loadcell for bowl weight display (not for percentage)
   const currentBowlWeight = Math.max(0, Math.round(telemetry?.weightGrams ?? 0));
 
@@ -170,16 +236,16 @@ export default function MainPage() {
     <div className="flex flex-col w-full h-screen bg-[#f4dfdf] overflow-y-auto md:overflow-hidden hidden-scrollbar">
       <Header nomCount={1} onSettingsClick={() => setIsSettingsModalOpen(true)} />
       <div className="fixed left-0 md:left-10 bottom-0 z-100 scale-90 md:scale-80">
-         <CatDecoration hungry={showCatBubble} />
+        <CatDecoration hungry={showCatBubble} />
       </div>
-      
+
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden hidden-scrollbar">
         {/* Main feeding interface */}
         <div className="flex-1 relative flex items-center justify-center flex-col md:min-h-0">
           <div className="relative w-full h-full flex flex-col items-center justify-center md:justify-start pt-8 md:pt-0">
             {/* Food bowl meter */}
             <div className="relative z-100 mt-10 scale-75 md:scale-80 lg:scale-90">
-              <FoodMeter 
+              <FoodMeter
                 currentAmount={Math.round((foodPercentage / 100) * maxFoodCapacity)}
                 maxAmount={maxFoodCapacity}
                 percentage={Number.isFinite(foodPercentage) ? foodPercentage : 0}
@@ -188,7 +254,7 @@ export default function MainPage() {
 
             {/* Feed input section */}
             <div className="relative z-20 mb-6">
-              <FeedInput onFeed={handleFeed} isSubmitting={isFeeding} />
+              <FeedInput onFeed={handleFeed} isSubmitting={isFeeding} defaultAmount={settings.defaultTreatAmount} />
               {feedStatus && (
                 <p
                   className={`mt-3 text-center text-sm ${feedStatus.type === 'error' ? 'text-red-700' : 'text-green-700'}`}
@@ -229,107 +295,69 @@ export default function MainPage() {
           <div className="flex flex-col flex-1 min-h-0 overflow-y-auto hidden-scrollbar">
             {/* Next Noms Section */}
             <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center justify-between w-full">
-                <p className="font-bold text-[24px] text-[#390202]">Next Noms</p>
-                <button
-                  onClick={() => setIsNomsModalOpen(true)}
-                  className="flex items-center justify-center text-[#390202] hover:text-black transition-colors"
-                  aria-label="Configure feeding cadence"
-                >
-                  <Edit3 size={28} strokeWidth={2.5} />
-                </button>
-              </div>
+              <p className="font-bold text-[24px] text-[#390202]">Next Noms</p>
 
-              <NomCard
-                time="7am"
-                amount="500g"
-                note="add 300g more"
-                variant="upcoming"
-              />
-
-              <NomCard
-                time="7am"
-                amount="500g"
-                note="add 300g more"
-                variant="upcoming"
-              />
+              {upcomingFeedings.length > 0 ? (
+                upcomingFeedings.map((feeding, index) => (
+                  <NomCard
+                    key={`upcoming-${index}`}
+                    time={feeding.time}
+                    amount={`${feeding.amount}g`}
+                    note={feeding.note}
+                    variant="upcoming"
+                  />
+                ))
+              ) : (
+                <p className="text-[#390202]/60 text-sm">No upcoming feedings scheduled</p>
+              )}
             </div>
 
             {/* Noms List Section */}
             <div className="flex flex-col gap-4">
-              <SectionHeader 
-                title="Noms List" 
-              />
-              
-              <NomCard
-                time="7am"
-                amount="500g"
-                note="add 300g more"
-                variant="scheduled"
-                statusColor="#93b7d9"
-                onClick={() => setIsNomsModalOpen(true)}
+              <SectionHeader
+                title="Noms List"
               />
 
-              <NomCard
-                time="7am"
-                amount="500g"
-                note="add 300g more"
-                variant="scheduled"
-                statusColor="#f4dfdf"
-                onClick={() => setIsNomsModalOpen(true)}
-              />
+              {feedingHistory.length > 0 ? (
+                feedingHistory.map((feeding, index) => (
+                  <NomCard
+                    key={feeding.id}
+                    time={feeding.time}
+                    amount={`${feeding.amount}g`}
+                    note={feeding.note}
+                    variant="scheduled"
+                    statusColor={feeding.type === 'automatic' ? '#93b7d9' : '#f4dfdf'}
+                    onClick={() => setIsNomsModalOpen(true)}
+                  />
+                ))
+              ) : (
+                <p className="text-[#390202]/60 text-sm">No feeding history yet</p>
+              )}
 
-              <NomCard
-                time="8am"
-                amount="500g"
-                note="add 300g more"
-                variant="scheduled"
-                statusColor="#93b7d9"
-                onClick={() => setIsNomsModalOpen(true)}
-              />
-
-              <NomCard
-                time="9am"
-                amount="500g"
-                note="add 300g more"
-                variant="scheduled"
-                statusColor="#f4dfdf"
-                onClick={() => setIsNomsModalOpen(true)}
-              />
-
-              <NomCard
-                time="10am"
-                amount="500g"
-                note="add 300g more"
-                variant="scheduled"
-                statusColor="#93b7d9"
-                onClick={() => setIsNomsModalOpen(true)}
-              />
-
-              <div className='h-30 block md:hidden'/>
+              <div className='h-30 block md:hidden' />
             </div>
           </div>
-          
+
         </div>
-        
+
       </div>
 
       <ChatbotButton onClick={() => setIsChatbotOpen(true)} />
 
       {/* Modals */}
-      <NomsModal 
-        isOpen={isNomsModalOpen} 
+      <NomsModal
+        isOpen={isNomsModalOpen}
         onClose={() => setIsNomsModalOpen(false)}
         onSave={() => setIsNomsModalOpen(false)}
         onDelete={() => setIsNomsModalOpen(false)}
       />
-      <SettingsModal 
-        isOpen={isSettingsModalOpen} 
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         onSave={() => setIsSettingsModalOpen(false)}
       />
-      <ChatbotModal 
-        isOpen={isChatbotOpen} 
+      <ChatbotModal
+        isOpen={isChatbotOpen}
         onClose={() => setIsChatbotOpen(false)}
       />
     </div>

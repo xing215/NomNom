@@ -104,10 +104,83 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (data: { maxAmount: string; treatAmount1: string; treatAmount2: string }) => void;
+  onSave?: () => void;
+}
+
+interface SettingsData {
+  maxBowlCapacity: number;
+  defaultTreatAmount: number;
+  feedingInterval: number;
+  amountPerFeeding: number;
+  isAutoFeedingEnabled: boolean;
 }
 
 export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
+  const [settings, setSettings] = useState<SettingsData>({
+    maxBowlCapacity: 100,
+    defaultTreatAmount: 25,
+    feedingInterval: 360,
+    amountPerFeeding: 50,
+    isAutoFeedingEnabled: true,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load settings when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen]);
+
+  const loadSettings = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/settings');
+      if (!response.ok) throw new Error('Failed to load settings');
+      const data = await response.json();
+      setSettings({
+        maxBowlCapacity: data.maxBowlCapacity ?? 100,
+        defaultTreatAmount: data.defaultTreatAmount ?? 25,
+        feedingInterval: data.feedingInterval ?? 360,
+        amountPerFeeding: data.amountPerFeeding ?? 50,
+        isAutoFeedingEnabled: data.isAutoFeedingEnabled ?? true,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      if (!response.ok) throw new Error('Failed to save settings');
+      onSave?.();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof SettingsData, value: string | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: typeof value === 'boolean' ? value : Number(value) || 0,
+    }));
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="bg-[#f4dfdf] rounded-[18px] p-[24px] flex flex-col gap-[16px] items-start relative w-[320px] md:w-[480px]">
@@ -120,51 +193,119 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
           <X size={30} strokeWidth={3} color="#000000" />
         </button>
 
-        {/* <div className="h-[35px] w-[24px] bg-transparent" /> */}
         <h2 className="font-bold text-[32px] text-[#390202] text-center w-full">
           SETTINGS
         </h2>
 
-        <div className="flex flex-col gap-[8px] items-end w-full">
-          <label htmlFor="max-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
-            Maximum amount
-          </label>
-          <input
-            id="max-amount"
-            type="number"
-            placeholder="500"
-            className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
-          />
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full py-8">
+            <div className="w-8 h-8 border-4 border-[#ff9797] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <p className="text-red-600 text-sm w-full text-center">{error}</p>
+            )}
 
-        <div className="flex flex-col gap-[8px] items-end w-full">
-          <label htmlFor="treat-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
-            Treat Amount
-          </label>
-          <input
-            id="treat-amount"
-            type="number"
-            placeholder="100"
-            className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
-          />
-        </div>
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="max-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Maximum Bowl Capacity (g)
+              </label>
+              <input
+                id="max-amount"
+                type="number"
+                value={settings.maxBowlCapacity}
+                onChange={(e) => handleInputChange('maxBowlCapacity', e.target.value)}
+                placeholder="100"
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
+              />
+            </div>
 
-        <div className="h-px w-[24px] bg-transparent" />
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="treat-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Default Treat Amount (g)
+              </label>
+              <input
+                id="treat-amount"
+                type="number"
+                value={settings.defaultTreatAmount}
+                onChange={(e) => handleInputChange('defaultTreatAmount', e.target.value)}
+                placeholder="25"
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
+              />
+            </div>
 
-        <div className="flex gap-[20px] items-start justify-center w-full">
-          <button
-            onClick={() => onSave?.({ maxAmount: '', treatAmount1: '', treatAmount2: '' })}
-            className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors"
-          >
-            <p className="font-semibold text-[20px] text-black text-left">
-              SAVE
-            </p>
-          </button>
-        </div>
+            {/* Divider */}
+            <div className="w-full border-t-2 border-[#93b7d9] my-2"></div>
+            <h3 className="font-bold text-[24px] text-[#390202] w-full">Automatic Feeding</h3>
+
+            <div className="flex items-center justify-between w-full">
+              <label htmlFor="auto-feed-toggle" className="font-semibold text-[18px] text-[#390202]">
+                Enable Auto Feeding
+              </label>
+              <button
+                id="auto-feed-toggle"
+                onClick={() => handleInputChange('isAutoFeedingEnabled', !settings.isAutoFeedingEnabled)}
+                className={`w-[60px] h-[32px] rounded-full transition-colors ${settings.isAutoFeedingEnabled ? 'bg-[#4c5fe3]' : 'bg-gray-400'
+                  } relative`}
+              >
+                <div
+                  className={`w-[26px] h-[26px] bg-white rounded-full absolute top-[3px] transition-all ${settings.isAutoFeedingEnabled ? 'right-[3px]' : 'left-[3px]'
+                    }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="feeding-interval" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Feeding Interval (minutes)
+              </label>
+              <input
+                id="feeding-interval"
+                type="number"
+                value={settings.feedingInterval}
+                onChange={(e) => handleInputChange('feedingInterval', e.target.value)}
+                placeholder="360"
+                disabled={!settings.isAutoFeedingEnabled}
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="amount-per-feeding" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Amount Per Feeding (g)
+              </label>
+              <input
+                id="amount-per-feeding"
+                type="number"
+                value={settings.amountPerFeeding}
+                onChange={(e) => handleInputChange('amountPerFeeding', e.target.value)}
+                placeholder="50"
+                disabled={!settings.isAutoFeedingEnabled}
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+              />
+            </div>
+
+            <div className="h-px w-[24px] bg-transparent" />
+
+            <div className="flex gap-[20px] items-start justify-center w-full">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors disabled:opacity-50"
+              >
+                <p className="font-semibold text-[20px] text-black text-left">
+                  {isSaving ? 'SAVING...' : 'SAVE'}
+                </p>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   );
 }
+
 
 // Chatbot Modal
 interface ChatbotModalProps {
