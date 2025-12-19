@@ -156,21 +156,30 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
   };
 
   const handleSave = async () => {
+    console.log('[Settings] handleSave called');
+    console.log('[Settings] Current settings:', settings);
     setIsSaving(true);
     setError(null);
     try {
+      console.log('[Settings] Sending PUT request to /api/settings');
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
-      if (!response.ok) throw new Error('Failed to save settings');
+      console.log('[Settings] Response status:', response.status);
+      const data = await response.json();
+      console.log('[Settings] Response data:', data);
+      if (!response.ok) throw new Error(data.error || 'Failed to save settings');
+      console.log('[Settings] Save successful, calling onSave and onClose');
       onSave?.();
       onClose();
     } catch (err) {
+      console.error('[Settings] Save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
       setIsSaving(false);
+      console.log('[Settings] handleSave finished');
     }
   };
 
