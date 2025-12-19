@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { memo, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -324,22 +324,84 @@ const PROMPT_SUGGESTIONS = [
   'Còn bao nhiêu thức ăn?',
 ];
 
+// Isolated memoized input component to prevent keyboard issues on mobile
+interface ChatInputProps {
+  onSend: (text: string) => void;
+  isLoading: boolean;
+}
+
+const ChatInput = memo(function ChatInput({ onSend, isLoading }: ChatInputProps) {
+  const [localInput, setLocalInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = () => {
+    const text = localInput.trim();
+    if (!text || isLoading) return;
+    onSend(text);
+    setLocalInput('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  return (
+    <div className="flex gap-[12px] items-center w-full">
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="text"
+        enterKeyHint="send"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        value={localInput}
+        onChange={(e) => setLocalInput(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="Nhập tin nhắn..."
+        disabled={isLoading}
+        className="flex-1 h-[48px] md:h-[40px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[14px] md:px-[12px] text-[16px] md:text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+      />
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isLoading || !localInput.trim()}
+        className="bg-[#ff9797] rounded-[12px] w-[48px] h-[48px] md:w-[40px] md:h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+        aria-label="Send message"
+      >
+        {isLoading ? (
+          <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="md:w-[20px] md:h-[20px]">
+            <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+});
+
 export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change - use block: 'nearest' to avoid stealing focus from input
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to avoid interfering with keyboard on mobile
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
-  const handleSend = async (messageText?: string) => {
-    const text = messageText || input.trim();
-    if (!text || isLoading) return;
+  const handleSend = useCallback(async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
-    setInput('');
     setIsLoading(true);
 
     // Add user message
@@ -396,19 +458,12 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  }, [messages, isLoading]);
 
   if (!isOpen) return null;
 
-  // Chat content component - shared between mobile and desktop
-  const ChatContent = () => (
+  // Chat content - inline JSX to avoid re-mounting on state changes
+  const chatContent = (
     <div className="flex flex-col gap-[16px] items-start h-full w-full px-[16px] py-[20px] pb-[16px] md:px-[18px] md:py-[24px] md:pb-[14px]">
       {/* Header with close button */}
       <div className="flex items-center justify-between w-full">
@@ -473,32 +528,8 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      <div className="flex gap-[12px] items-center w-full">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Nhập tin nhắn..."
-          disabled={isLoading}
-          className="flex-1 h-[48px] md:h-[40px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[14px] md:px-[12px] text-[16px] md:text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
-        />
-        <button
-          onClick={() => handleSend()}
-          disabled={isLoading || !input.trim()}
-          className="bg-[#ff9797] rounded-[12px] w-[48px] h-[48px] md:w-[40px] md:h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          aria-label="Send message"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="md:w-[20px] md:h-[20px]">
-              <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
-      </div>
+      {/* Input area - using memoized component to prevent keyboard issues on mobile */}
+      <ChatInput onSend={handleSend} isLoading={isLoading} />
     </div>
   );
 
@@ -517,12 +548,12 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
           backgroundColor: '#f4dfdf',
         }}
       >
-        <ChatContent />
+        {chatContent}
       </div>
 
       {/* Desktop: Floating popup - shows on screens >= md */}
       <div className="hidden md:flex fixed bottom-[110px] right-[50px] z-[9999] w-[380px] h-[500px] max-h-[70vh] bg-[#f4dfdf] rounded-[16px] drop-shadow-xl flex-col">
-        <ChatContent />
+        {chatContent}
       </div>
     </>
   );
