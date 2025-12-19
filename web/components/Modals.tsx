@@ -266,110 +266,124 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-40 pointer-events-none">
-      <div className="absolute bottom-[90px] md:bottom-[110px] right-[16px] md:right-[50px] pointer-events-auto drop-shadow-xl">
-        <div className="bg-[#f4dfdf] rounded-[16px] px-[18px] py-[24px] pb-[14px] flex flex-col gap-[16px] items-start relative w-[320px] h-[450px] max-h-[65vh]">
-          {/* Close/back button */}
-          <button
-            onClick={onClose}
-            className="absolute left-[20px] top-[20px] bg-[#ff9797] rounded-[40px] px-[12px] py-[18px] hover:bg-[#ff8585] transition-colors"
-            aria-label="Close chatbot"
-          >
-            <div className="w-[24px] h-[10px] relative">
-              <svg viewBox="0 0 24 10" fill="none" className="w-full h-full">
-                <path
-                  d="M2 5 L18 5 M18 1 L22 5 L18 9"
-                  stroke="black"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+  // Chat content component - shared between mobile and desktop
+  const ChatContent = () => (
+    <div className="flex flex-col gap-[16px] items-start h-full w-full px-[16px] py-[20px] pb-[16px] md:px-[18px] md:py-[24px] md:pb-[14px]">
+      {/* Header with close button */}
+      <div className="flex items-center justify-between w-full">
+        <h2 className="font-bold text-[22px] text-[#390202] text-left">
+          🐱 BONES
+        </h2>
+        <button
+          onClick={onClose}
+          className="bg-[#ff9797] rounded-full p-[10px] hover:bg-[#ff8585] transition-colors"
+          aria-label="Close chatbot"
+        >
+          <X size={20} strokeWidth={2.5} color="#000000" />
+        </button>
+      </div>
+
+      {/* Chat messages area */}
+      <div className="flex-1 w-full overflow-y-auto flex flex-col gap-[12px] pr-1">
+        {messages.length === 0 ? (
+          <div className="flex flex-col gap-2">
+            <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[16px] max-w-[280px] md:max-w-[260px]">
+              <p className="text-[14px] text-black">
+                Xin chào! Tôi là trợ lý chăm sóc mèo. Hỏi tôi bất cứ điều gì! 🐾
+              </p>
             </div>
-          </button>
-
-          <h2 className="font-bold text-[22px] text-[#390202] text-left w-full">
-            🐱 BONES
-          </h2>
-
-          {/* Chat messages area */}
-          <div className="flex-1 w-full overflow-y-auto flex flex-col gap-[12px] pr-1">
-            {messages.length === 0 ? (
-              <div className="flex flex-col gap-2">
-                <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[16px] max-w-[200px]">
-                  <p className="text-[14px] text-black">
-                    Xin chào! Tôi là trợ lý chăm sóc mèo. Hỏi tôi bất cứ điều gì! 🐾
-                  </p>
-                </div>
-                {/* Prompt suggestions */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSend(suggestion)}
-                      className="text-xs bg-[#ff9797] hover:bg-[#ff8585] text-black px-3 py-1.5 rounded-full transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              messages.map((message, idx) => (
-                <div
+            {/* Prompt suggestions */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
+                <button
                   key={idx}
-                  className={`${message.role === 'user'
-                    ? 'bg-[#ff9797] rounded-bl-[25px] rounded-br-[25px] rounded-tl-[25px] ml-auto'
-                    : 'bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px]'
-                    } p-[12px] max-w-[200px]`}
+                  onClick={() => handleSend(suggestion)}
+                  className="text-xs bg-[#ff9797] hover:bg-[#ff8585] text-black px-3 py-2 md:py-1.5 rounded-full transition-colors"
                 >
-                  <p className="text-[13px] text-black whitespace-pre-wrap">
-                    {message.content || (isLoading && message.role === 'assistant' ? '...' : '')}
-                  </p>
-                </div>
-              ))
-            )}
-            {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
-              <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[12px] max-w-[200px]">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                  <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
-
-          <div className="flex gap-[12px] items-center w-full h-[40px]">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Nhập tin nhắn..."
-              disabled={isLoading}
-              className="flex-1 h-full bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[12px] text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
-            />
-            <button
-              onClick={() => handleSend()}
-              disabled={isLoading || !input.trim()}
-              className="bg-[#ff9797] rounded-[12px] w-[40px] h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Send message"
+        ) : (
+          messages.map((message, idx) => (
+            <div
+              key={idx}
+              className={`${message.role === 'user'
+                ? 'bg-[#ff9797] rounded-bl-[25px] rounded-br-[25px] rounded-tl-[25px] ml-auto'
+                : 'bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px]'
+                } p-[12px] max-w-[75%] md:max-w-[260px]`}
             >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
+              <p className="text-[14px] md:text-[13px] text-black whitespace-pre-wrap">
+                {message.content || (isLoading && message.role === 'assistant' ? '...' : '')}
+              </p>
+            </div>
+          ))
+        )}
+        {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+          <div className="bg-[#f7cbcb] rounded-bl-[25px] rounded-br-[25px] rounded-tr-[25px] p-[12px] max-w-[200px]">
+            <div className="flex gap-1">
+              <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-2 h-2 bg-[#390202] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+            </div>
           </div>
-        </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input area */}
+      <div className="flex gap-[12px] items-center w-full">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Nhập tin nhắn..."
+          disabled={isLoading}
+          className="flex-1 h-[48px] md:h-[40px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[14px] md:px-[12px] text-[16px] md:text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+        />
+        <button
+          onClick={() => handleSend()}
+          disabled={isLoading || !input.trim()}
+          className="bg-[#ff9797] rounded-[12px] w-[48px] h-[48px] md:w-[40px] md:h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          aria-label="Send message"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="md:w-[20px] md:h-[20px]">
+              <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile: Full screen - shows on screens < md */}
+      <div
+        className="md:hidden"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          backgroundColor: '#f4dfdf',
+        }}
+      >
+        <ChatContent />
+      </div>
+
+      {/* Desktop: Floating popup - shows on screens >= md */}
+      <div className="hidden md:flex fixed bottom-[110px] right-[50px] z-[9999] w-[380px] h-[500px] max-h-[70vh] bg-[#f4dfdf] rounded-[16px] drop-shadow-xl flex-col">
+        <ChatContent />
+      </div>
+    </>
   );
 }
 
