@@ -71,8 +71,8 @@ export default function MainPage() {
   const [isNomsModalOpen, setIsNomsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [isFeeding, setIsFeeding] = useState(false);
-  const [feedStatus, setFeedStatus] = useState<FeedStatus>(null);
+  const [isFeeding, setIsFeeding] = useState(false); // Đang cho ăn ?
+  const [feedStatus, setFeedStatus] = useState<FeedStatus>(null); // Kết quả cho ăn
   const [telemetry, setTelemetry] = useState<TelemetryState>(null);
   const [telemetryError, setTelemetryError] = useState<string | null>(null);
   const [showCatBubble, setShowCatBubble] = useState(false);
@@ -170,7 +170,7 @@ export default function MainPage() {
 
   const handleFeed = useCallback(async (amount: number) => {
     setFeedStatus(null);
-    setIsFeeding(true);
+    setIsFeeding(true); // Để nút Feed đổi trạng thái sang đang cho ăn
 
     try {
       const response = await fetch('/api/mqtt/manual-feed', {
@@ -181,7 +181,7 @@ export default function MainPage() {
         body: JSON.stringify({ grams: amount }),
       });
 
-      let body: ManualFeedResponse | null = null;
+      let body: ManualFeedResponse | null = null; // Response từ API
       try {
         body = (await response.json()) as ManualFeedResponse;
       } catch {
@@ -193,10 +193,10 @@ export default function MainPage() {
       }
 
       setFeedStatus({ type: 'success', message: `Command sent for ${amount}g.` });
+      //Refresh telemetry data
       const latest = await loadTelemetry();
       setTelemetry(latest.summary);
       setTelemetryError(latest.error);
-      // Refresh feeding schedule after manual feed
       await loadFeedingSchedule();
     } catch (error) {
       setFeedStatus({

@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
       const { default: connectToDatabase } = await import('@/lib/mongodb');
       const { default: CatBeggingLog } = await import('@/models/CatBeggingLog');
       const { default: FeedingLog } = await import('@/models/FeedingLog');
-      
+
       await connectToDatabase();
-      
+
       // Save feeding log
       await FeedingLog.create({
         deviceId: 'NomNom-01',
@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
         feedingTime: new Date(),
         notes: note,
       });
-      
+
       // Update the most recent begging log that hasn't been triggered yet
       await CatBeggingLog.findOneAndUpdate(
         { deviceId: 'NomNom-01', triggered: false },
         { triggered: true },
         { sort: { detectedAt: -1 } }
       );
-      
+
       console.log('[DB] Manual feeding logged successfully');
     } catch (error) {
       console.error('[DB] Error saving feeding log:', error);

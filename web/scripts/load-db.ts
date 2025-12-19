@@ -1,17 +1,12 @@
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import 'dotenv/config';
 import mongoose from 'mongoose';
+import { embeddings } from '../lib/gemini';
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 if (!MONGODB_URI) {
     throw new Error('MONGODB_URI is not defined');
-}
-
-if (!GOOGLE_API_KEY) {
-    throw new Error('GOOGLE_API_KEY is not defined');
 }
 
 // Cat Knowledge Schema (inline for script)
@@ -28,12 +23,6 @@ const catKnowledgeSchema = new mongoose.Schema({
 });
 
 const CatKnowledge = mongoose.models.CatKnowledge || mongoose.model('CatKnowledge', catKnowledgeSchema);
-
-// Embedding model
-const embeddings = new GoogleGenerativeAIEmbeddings({
-    modelName: 'embedding-001',
-    apiKey: GOOGLE_API_KEY,
-});
 
 // Cat knowledge data
 const CAT_DATA = [

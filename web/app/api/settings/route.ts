@@ -1,4 +1,5 @@
 import connectToDatabase from '@/lib/mongodb';
+import { sendAutoFeedConfig } from '@/lib/server/mqttClient';
 import FeedingSettings from '@/models/FeedingSettings';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -96,6 +97,23 @@ export async function PUT(request: NextRequest) {
             { $set: updateData },
             { new: true, upsert: true, runValidators: true }
         ).lean();
+
+        if (settings && (
+            updateData.isAutoFeedingEnabled !== undefined ||
+            updateData.feedingInterval !== undefined ||
+            updateData.amountPerFeeding !== undefined
+        )) {
+            try {
+                await sendAutoFeedConfig({
+                    enabled: settings.isAutoFeedingEnabled ?? false,
+                    grams: settings.amountPerFeeding ?? 50,
+                    intervalMinutes: settings.feedingInterval ?? 360,
+                });
+                console.log('[API] Auto-feed config published to MQTT');
+            } catch (mqttError) {
+                console.error('[API] Failed to publish auto-feed config to MQTT:', mqttError);
+            }
+        }
 
         return NextResponse.json({
             message: 'Settings updated successfully',

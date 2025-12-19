@@ -49,7 +49,16 @@ void motor_stopFeeding() {
   Serial.println("[Motor]\tStopped");
 }
 
-//Manual feed from MQTT
+/**
+ * Xử lý lệnh cho ăn thủ công từ MQTT
+ * Format JSON:
+ * {
+ *   "action": "feed",    // Hành động - mặc định "feed"
+ *   "grams": 10          // Số gram thức ăn cần thêm vào tô (mặc định 10g)
+ * }
+ * 
+ * @param payload JSON string từ MQTT
+ */
 void motor_processManualFeed(String payload) {
   Serial.print("[Motor]\tManual feed command: ");
   Serial.println(payload);
@@ -61,7 +70,7 @@ void motor_processManualFeed(String payload) {
     Serial.print("[Motor]\tJSON parse error: ");
     Serial.println(error.c_str());
     // Nếu không parse được, vẫn cho ăn với gram mặc định
-    motorManualTrigger = true;
+    motorManualTrigger = true; // Bật true để hàm loop cho ăn
     motorManualGrams = 10;
     return;
   }
@@ -182,21 +191,21 @@ void motor_checkAutoFeed() {
 }
 void Motor_loop() {
   // Manual_Feeding
-  if (motorManualTrigger && !motorRunning) {
+  if (motorManualTrigger && !motorRunning) { // Trigger true và motor không chạy
     motorManualTrigger = false;
     
-    // Cal weight of food bowl
-    float target = current_weight_g + motorManualGrams;
+    // 
+    float target = motorManualGrams - current_weight_g;
     
     Serial.print("[Motor]\tManual feed: adding ");
-    Serial.print(motorManualGrams);
+    Serial.print(target);
     Serial.print("g to current ");
     Serial.print(current_weight_g);
     Serial.print("g = target ");
     Serial.print(target);
     Serial.println("g");
     
-    motor_startFeeding(target);
+    motor_startFeeding(motorManualGrams);
   }
   
   // Check feeding progress
