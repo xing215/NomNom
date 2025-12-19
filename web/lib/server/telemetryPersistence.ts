@@ -182,12 +182,12 @@ export function ensureTelemetryPersistence() {
           
           console.log('[DB] Cat begging detected and saved to MongoDB');
           
-          // Send cat begging notification only on rising edge (becomes pressed) with cooldown
+          // Send cat begging notification with cooldown
           const now = Date.now();
           const timeSinceLastNotif = now - lastCatBeggingNotification;
           console.log('[Pushsafer] Cat begging - time since last notification:', timeSinceLastNotif, 'ms (cooldown:', CAT_BEGGING_COOLDOWN, 'ms)');
           
-          if (!limitSwitchPreviouslyPressed && now - lastCatBeggingNotification > CAT_BEGGING_COOLDOWN) {
+          if (now - lastCatBeggingNotification > CAT_BEGGING_COOLDOWN) {
             lastCatBeggingNotification = now;
             console.log('[Pushsafer] Sending cat begging notification...');
             notifyCatBegging().then((success) => {
