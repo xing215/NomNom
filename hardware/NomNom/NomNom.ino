@@ -6,12 +6,12 @@
 #include "ToF.h"
 #include "LoadCell.h"
 
-unsigned long dht_upload_time = 5000;
-unsigned long ls_cooldown = 5000;
-unsigned long tof_empty_storage = 5000;
-unsigned long tof_upload_time = 5000;
+unsigned long dht_upload_time = 1000;
+unsigned long ls_cooldown = 1000;
+unsigned long tof_empty_storage = 1000;
+unsigned long tof_upload_time = 1000;
 int motor_speed = 200;
-unsigned long motor_timeout = 10000;
+unsigned long motor_timeout = 8000;
 float current_weight_g = 0.0;
 float max_weight = 1000.0;
 unsigned long loadcell_upload_time = 5000;

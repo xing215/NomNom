@@ -21,7 +21,7 @@ int _tof_getDistance() {
 void ToF_setup() {
   delay(100);
   if (!lox.begin()) {
-    Serial.println("[ToF]\tFailed to boot VL53L0X");
+    Serial.println("[ToF]\t\tFailed to boot VL53L0X");
     TOF_SUCCESS = false;
   }
   else
@@ -36,11 +36,11 @@ void ToF_sendDistance() {
   int distance = _tof_getDistance();
   
   if (!TOF_SUCCESS) 
-  Serial.println("[ToF]\tFailed to boot VL53L0X");
+  Serial.println("[ToF]\t\tFailed to boot VL53L0X");
   else if (distance == -1)
-    Serial.println("[ToF]\tDistance is too far");
+    Serial.println("[ToF]\t\tDistance is too far");
   else {
-    Serial.print("[ToF]\tDistance: ");
+    Serial.print("[ToF]\t\tDistance: ");
     Serial.println(distance);
     String formatedData = "{\"distance\":";
     formatedData += distance;

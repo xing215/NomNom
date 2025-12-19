@@ -7,7 +7,7 @@
 // ---- Calibration factor ----
 // You MUST tune this so that weight_g comes out in grams.
 // Start with something like 100000.0f and adjust after testing.
-#define LOADCELL_CAL_FACTOR     100.0f   // TODO: change after calibration
+#define LOADCELL_CAL_FACTOR     800.0f   // TODO: change after calibration
 
 Adafruit_HX711 hx711(LOADCELL_DATA_PIN, LOADCELL_SCK_PIN);
 
@@ -28,14 +28,26 @@ void LoadCell_loop() {
     lc_time = now;
 
     // Blocking read on channel A, gain 128
-    int32_t rawA = hx711.readChannelBlocking(CHAN_A_GAIN_128);
+    double rawA = hx711.readChannelBlocking(CHAN_A_GAIN_128);
 
     // Convert raw reading to grams (you will adjust LOADCELL_CAL_FACTOR)
-    float weight_g = (float)rawA / LOADCELL_CAL_FACTOR;
+    double weight_g = rawA / LOADCELL_CAL_FACTOR;
 
-    // Clean tiny negatives
-    if (weight_g < 0) weight_g = 0;
+    for (int i = 0; i < 2; i++) {
+      // Blocking read on channel A, gain 128
+      rawA = hx711.readChannelBlocking(CHAN_A_GAIN_128);
+
+      // Convert raw reading to grams (you will adjust LOADCELL_CAL_FACTOR)
+      weight_g = (weight_g + rawA / LOADCELL_CAL_FACTOR) / 2;
+      delay(10);
+    }
+
+    weight_g = -weight_g;
     
+    // Clean tiny negatives
+    if (weight_g < 0)
+      weight_g = 0;
+
     // Cập nhật biến global để các module khác đọc được
     current_weight_g = weight_g;
 
