@@ -6,9 +6,10 @@ interface FeedInputProps {
   onFeed?: (amount: number) => void | Promise<void>;
   isSubmitting?: boolean;
   defaultAmount?: number;
+  hungry?: boolean;
 }
 
-export default function FeedInput({ onFeed, isSubmitting = false, defaultAmount = 100 }: FeedInputProps) {
+export default function FeedInput({ onFeed, isSubmitting = false, defaultAmount = 100, hungry = false }: FeedInputProps) {
   const [amountInput, setAmountInput] = useState(String(defaultAmount));
 
   // Sync with defaultAmount when it changes (e.g., from API fetch)
@@ -31,7 +32,7 @@ export default function FeedInput({ onFeed, isSubmitting = false, defaultAmount 
   return (
     <div className="flex flex-col gap-4 items-center">
       <p className="font-medium text-[20px] text-[#390202] text-center">
-        Give a lil more ?
+        {hungry ? "Hungry!! Give your cat some more food ?" : "Give a lil more ?"}
       </p>
       <div className="flex gap-[18px] items-center">
         <input

@@ -255,7 +255,7 @@ export default function MainPage() {
 
             {/* Feed input section */}
             <div className="relative z-20 mb-6">
-              <FeedInput onFeed={handleFeed} isSubmitting={isFeeding} defaultAmount={settings.defaultTreatAmount} />
+              <FeedInput onFeed={handleFeed} isSubmitting={isFeeding} defaultAmount={settings.defaultTreatAmount} hungry={showCatBubble} />
               {feedStatus && (
                 <p
                   className={`mt-3 text-center text-sm ${feedStatus.type === 'error' ? 'text-red-700' : 'text-green-700'}`}
@@ -264,16 +264,6 @@ export default function MainPage() {
                 </p>
               )}
             </div>
-
-            {/* Cat begging bubble */}
-            {showCatBubble && (
-              <div className="relative z-30 mb-4 animate-bounce">
-                <div className="bg-white rounded-2xl shadow-lg px-6 py-4 border-4 border-[#93b7d9] relative">
-                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></div>
-                  <p className="text-2xl font-bold text-[#390202] text-center">🐱 Meow! Feed me!</p>
-                </div>
-              </div>
-            )}
 
             {/* Cat decoration - only visible on desktop */}
 
