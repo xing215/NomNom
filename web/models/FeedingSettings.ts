@@ -6,6 +6,7 @@ export interface IFeedingSettings extends Document {
     amountPerFeeding: number; // Amount in grams per feeding
     maxBowlCapacity: number; // Maximum weight in grams allowed in bowl
     isAutoFeedingEnabled: boolean;
+    defaultTreatAmount: number; // Default treat amount in grams for manual feeding
     updatedAt: Date;
 }
 
@@ -38,6 +39,12 @@ const FeedingSettingsSchema: Schema<IFeedingSettings> = new Schema(
         isAutoFeedingEnabled: {
             type: Boolean,
             default: true,
+        },
+        defaultTreatAmount: {
+            type: Number,
+            required: [true, "Default treat amount is required"],
+            min: [1, "Treat amount must be at least 1 gram"],
+            default: 25, // Default 25 grams for treats
         },
     },
     {

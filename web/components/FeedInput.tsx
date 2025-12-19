@@ -1,14 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface FeedInputProps {
   onFeed?: (amount: number) => void | Promise<void>;
   isSubmitting?: boolean;
+  defaultAmount?: number;
 }
 
-export default function FeedInput({ onFeed, isSubmitting = false }: FeedInputProps) {
-  const [amountInput, setAmountInput] = useState('100');
+export default function FeedInput({ onFeed, isSubmitting = false, defaultAmount = 100 }: FeedInputProps) {
+  const [amountInput, setAmountInput] = useState(String(defaultAmount));
+
+  // Sync with defaultAmount when it changes (e.g., from API fetch)
+  useEffect(() => {
+    setAmountInput(String(defaultAmount));
+  }, [defaultAmount]);
 
   const parsedAmount = Number(amountInput);
   const isAmountValid = amountInput.trim().length > 0 && Number.isFinite(parsedAmount) && parsedAmount > 0;
@@ -36,7 +42,7 @@ export default function FeedInput({ onFeed, isSubmitting = false }: FeedInputPro
           onChange={(event) => setAmountInput(event.target.value)}
           className="w-[180px] h-[54px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[14px] px-4 text-[18px] focus:outline-none focus:border-[#3d4ec4]"
         />
-        <button 
+        <button
           className="bg-[#ff9797] rounded-[12px] px-10 py-3 hover:bg-[#ff8585] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={handleFeedClick}
           disabled={isDisabled}

@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { memo, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -104,10 +104,92 @@ export function NomsModal({ isOpen, onClose, onSave, onDelete }: NomsModalProps)
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (data: { maxAmount: string; treatAmount1: string; treatAmount2: string }) => void;
+  onSave?: () => void;
+}
+
+interface SettingsData {
+  maxBowlCapacity: number;
+  defaultTreatAmount: number;
+  feedingInterval: number;
+  amountPerFeeding: number;
+  isAutoFeedingEnabled: boolean;
 }
 
 export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
+  const [settings, setSettings] = useState<SettingsData>({
+    maxBowlCapacity: 100,
+    defaultTreatAmount: 25,
+    feedingInterval: 360,
+    amountPerFeeding: 50,
+    isAutoFeedingEnabled: true,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load settings when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen]);
+
+  const loadSettings = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/settings');
+      if (!response.ok) throw new Error('Failed to load settings');
+      const data = await response.json();
+      setSettings({
+        maxBowlCapacity: data.maxBowlCapacity ?? 100,
+        defaultTreatAmount: data.defaultTreatAmount ?? 25,
+        feedingInterval: data.feedingInterval ?? 360,
+        amountPerFeeding: data.amountPerFeeding ?? 50,
+        isAutoFeedingEnabled: data.isAutoFeedingEnabled ?? true,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    console.log('[Settings] handleSave called');
+    console.log('[Settings] Current settings:', settings);
+    setIsSaving(true);
+    setError(null);
+    try {
+      console.log('[Settings] Sending PUT request to /api/settings');
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      console.log('[Settings] Response status:', response.status);
+      const data = await response.json();
+      console.log('[Settings] Response data:', data);
+      if (!response.ok) throw new Error(data.error || 'Failed to save settings');
+      console.log('[Settings] Save successful, calling onSave and onClose');
+      onSave?.();
+      onClose();
+    } catch (err) {
+      console.error('[Settings] Save error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setIsSaving(false);
+      console.log('[Settings] handleSave finished');
+    }
+  };
+
+  const handleInputChange = (field: keyof SettingsData, value: string | boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: typeof value === 'boolean' ? value : Number(value) || 0,
+    }));
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="bg-[#f4dfdf] rounded-[18px] p-[24px] flex flex-col gap-[16px] items-start relative w-[320px] md:w-[480px]">
@@ -120,51 +202,119 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
           <X size={30} strokeWidth={3} color="#000000" />
         </button>
 
-        {/* <div className="h-[35px] w-[24px] bg-transparent" /> */}
         <h2 className="font-bold text-[32px] text-[#390202] text-center w-full">
           SETTINGS
         </h2>
 
-        <div className="flex flex-col gap-[8px] items-end w-full">
-          <label htmlFor="max-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
-            Maximum amount
-          </label>
-          <input
-            id="max-amount"
-            type="number"
-            placeholder="500"
-            className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
-          />
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full py-8">
+            <div className="w-8 h-8 border-4 border-[#ff9797] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <p className="text-red-600 text-sm w-full text-center">{error}</p>
+            )}
 
-        <div className="flex flex-col gap-[8px] items-end w-full">
-          <label htmlFor="treat-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
-            Treat Amount
-          </label>
-          <input
-            id="treat-amount"
-            type="number"
-            placeholder="100"
-            className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
-          />
-        </div>
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="max-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Maximum Bowl Capacity (g)
+              </label>
+              <input
+                id="max-amount"
+                type="number"
+                value={settings.maxBowlCapacity}
+                onChange={(e) => handleInputChange('maxBowlCapacity', e.target.value)}
+                placeholder="100"
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
+              />
+            </div>
 
-        <div className="h-px w-[24px] bg-transparent" />
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="treat-amount" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Default Treat Amount (g)
+              </label>
+              <input
+                id="treat-amount"
+                type="number"
+                value={settings.defaultTreatAmount}
+                onChange={(e) => handleInputChange('defaultTreatAmount', e.target.value)}
+                placeholder="25"
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4]"
+              />
+            </div>
 
-        <div className="flex gap-[20px] items-start justify-center w-full">
-          <button
-            onClick={() => onSave?.({ maxAmount: '', treatAmount1: '', treatAmount2: '' })}
-            className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors"
-          >
-            <p className="font-semibold text-[20px] text-black text-left">
-              SAVE
-            </p>
-          </button>
-        </div>
+            {/* Divider */}
+            <div className="w-full border-t-2 border-[#93b7d9] my-2"></div>
+            <h3 className="font-bold text-[24px] text-[#390202] w-full">Automatic Feeding</h3>
+
+            <div className="flex items-center justify-between w-full">
+              <label htmlFor="auto-feed-toggle" className="font-semibold text-[18px] text-[#390202]">
+                Enable Auto Feeding
+              </label>
+              <button
+                id="auto-feed-toggle"
+                onClick={() => handleInputChange('isAutoFeedingEnabled', !settings.isAutoFeedingEnabled)}
+                className={`w-[60px] h-[32px] rounded-full transition-colors ${settings.isAutoFeedingEnabled ? 'bg-[#4c5fe3]' : 'bg-gray-400'
+                  } relative`}
+              >
+                <div
+                  className={`w-[26px] h-[26px] bg-white rounded-full absolute top-[3px] transition-all ${settings.isAutoFeedingEnabled ? 'right-[3px]' : 'left-[3px]'
+                    }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="feeding-interval" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Feeding Interval (minutes)
+              </label>
+              <input
+                id="feeding-interval"
+                type="number"
+                value={settings.feedingInterval}
+                onChange={(e) => handleInputChange('feedingInterval', e.target.value)}
+                placeholder="360"
+                disabled={!settings.isAutoFeedingEnabled}
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex flex-col gap-[8px] items-end w-full">
+              <label htmlFor="amount-per-feeding" className="font-semibold text-[20px] text-[#390202] uppercase w-full text-left">
+                Amount Per Feeding (g)
+              </label>
+              <input
+                id="amount-per-feeding"
+                type="number"
+                value={settings.amountPerFeeding}
+                onChange={(e) => handleInputChange('amountPerFeeding', e.target.value)}
+                placeholder="50"
+                disabled={!settings.isAutoFeedingEnabled}
+                className="w-full h-[60px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[16px] text-[18px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+              />
+            </div>
+
+            <div className="h-px w-[24px] bg-transparent" />
+
+            <div className="flex gap-[20px] items-start justify-center w-full">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-[#ff9797] rounded-[12px] px-[40px] py-[12px] hover:bg-[#ff8585] transition-colors disabled:opacity-50"
+              >
+                <p className="font-semibold text-[20px] text-black text-left">
+                  {isSaving ? 'SAVING...' : 'SAVE'}
+                </p>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   );
 }
+
 
 // Chatbot Modal
 interface ChatbotModalProps {
@@ -183,22 +333,84 @@ const PROMPT_SUGGESTIONS = [
   'Còn bao nhiêu thức ăn?',
 ];
 
+// Isolated memoized input component to prevent keyboard issues on mobile
+interface ChatInputProps {
+  onSend: (text: string) => void;
+  isLoading: boolean;
+}
+
+const ChatInput = memo(function ChatInput({ onSend, isLoading }: ChatInputProps) {
+  const [localInput, setLocalInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = () => {
+    const text = localInput.trim();
+    if (!text || isLoading) return;
+    onSend(text);
+    setLocalInput('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  return (
+    <div className="flex gap-[12px] items-center w-full">
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="text"
+        enterKeyHint="send"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        value={localInput}
+        onChange={(e) => setLocalInput(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="Nhập tin nhắn..."
+        disabled={isLoading}
+        className="flex-1 h-[48px] md:h-[40px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[14px] md:px-[12px] text-[16px] md:text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
+      />
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isLoading || !localInput.trim()}
+        className="bg-[#ff9797] rounded-[12px] w-[48px] h-[48px] md:w-[40px] md:h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+        aria-label="Send message"
+      >
+        {isLoading ? (
+          <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="md:w-[20px] md:h-[20px]">
+            <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+});
+
 export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change - use block: 'nearest' to avoid stealing focus from input
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to avoid interfering with keyboard on mobile
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
-  const handleSend = async (messageText?: string) => {
-    const text = messageText || input.trim();
-    if (!text || isLoading) return;
+  const handleSend = useCallback(async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
-    setInput('');
     setIsLoading(true);
 
     // Add user message
@@ -255,19 +467,12 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  }, [messages, isLoading]);
 
   if (!isOpen) return null;
 
-  // Chat content component - shared between mobile and desktop
-  const ChatContent = () => (
+  // Chat content - inline JSX to avoid re-mounting on state changes
+  const chatContent = (
     <div className="flex flex-col gap-[16px] items-start h-full w-full px-[16px] py-[20px] pb-[16px] md:px-[18px] md:py-[24px] md:pb-[14px]">
       {/* Header with close button */}
       <div className="flex items-center justify-between w-full">
@@ -332,32 +537,8 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area */}
-      <div className="flex gap-[12px] items-center w-full">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Nhập tin nhắn..."
-          disabled={isLoading}
-          className="flex-1 h-[48px] md:h-[40px] bg-[#f7cbcb] border-[3px] border-[#4c5fe3] rounded-[16px] px-[14px] md:px-[12px] text-[16px] md:text-[15px] focus:outline-none focus:border-[#3d4ec4] disabled:opacity-50"
-        />
-        <button
-          onClick={() => handleSend()}
-          disabled={isLoading || !input.trim()}
-          className="bg-[#ff9797] rounded-[12px] w-[48px] h-[48px] md:w-[40px] md:h-[40px] flex items-center justify-center hover:bg-[#ff8585] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          aria-label="Send message"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 md:w-4 md:h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="md:w-[20px] md:h-[20px]">
-              <path d="M2 10 L18 10 M10 2 L18 10 L10 18" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
-      </div>
+      {/* Input area - using memoized component to prevent keyboard issues on mobile */}
+      <ChatInput onSend={handleSend} isLoading={isLoading} />
     </div>
   );
 
@@ -376,12 +557,12 @@ export function ChatbotModal({ isOpen, onClose }: ChatbotModalProps) {
           backgroundColor: '#f4dfdf',
         }}
       >
-        <ChatContent />
+        {chatContent}
       </div>
 
       {/* Desktop: Floating popup - shows on screens >= md */}
       <div className="hidden md:flex fixed bottom-[110px] right-[50px] z-[9999] w-[380px] h-[500px] max-h-[70vh] bg-[#f4dfdf] rounded-[16px] drop-shadow-xl flex-col">
-        <ChatContent />
+        {chatContent}
       </div>
     </>
   );
