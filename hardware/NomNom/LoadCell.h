@@ -7,7 +7,7 @@
 // ---- Calibration factor ----
 // You MUST tune this so that weight_g comes out in grams.
 // Start with something like 100000.0f and adjust after testing.
-#define LOADCELL_CAL_FACTOR     10.0f   // TODO: change after calibration
+#define LOADCELL_CAL_FACTOR     100.0f   // TODO: change after calibration
 
 Adafruit_HX711 hx711(LOADCELL_DATA_PIN, LOADCELL_SCK_PIN);
 
