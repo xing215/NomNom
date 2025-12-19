@@ -246,7 +246,7 @@ export default function MainPage() {
             {/* Food bowl meter */}
             <div className="relative z-100 mt-10 scale-75 md:scale-80 lg:scale-90">
               <FoodMeter
-                currentAmount={Math.round((foodPercentage / 100) * maxFoodCapacity)}
+                currentAmount={currentBowlWeight}
                 maxAmount={maxFoodCapacity}
                 percentage={Number.isFinite(foodPercentage) ? foodPercentage : 0}
               />
