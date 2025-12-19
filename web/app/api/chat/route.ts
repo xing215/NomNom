@@ -3,19 +3,25 @@ import { generateRAGResponse } from '@/lib/rag';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { streamText } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
 
 export const maxDuration = 30;
 
-// Set Google Application Credentials for Vertex AI
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(process.cwd(), 'chrome-courage-480502-a2-cab2530ea221.json');
-}
+// Google Cloud configuration from environment variables
+const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || '';
+const clientEmail = process.env.GOOGLE_CLOUD_CLIENT_EMAIL || '';
+const privateKey = process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n') || '';
+const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
-// Create Vertex AI provider with project and location from env
+// Create Vertex AI provider with service account credentials
 const vertex = createVertex({
-    project: process.env.GOOGLE_CLOUD_PROJECT || 'chrome-courage-480502-a2',
-    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
+    project: projectId,
+    location: location,
+    googleAuthOptions: {
+        credentials: {
+            client_email: clientEmail,
+            private_key: privateKey,
+        },
+    },
 });
 
 interface ChatMessage {
