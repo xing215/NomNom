@@ -1,6 +1,4 @@
 import { helpers, PredictionServiceClient } from '@google-cloud/aiplatform';
-import { existsSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
 
 // Google Cloud configuration from environment variables
 const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || '';
@@ -10,40 +8,17 @@ const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
 // Lazy initialization
 let _predictionClient: PredictionServiceClient | null = null;
-let _credentialsPath: string | null = null;
 
-// Create temporary service account JSON file
-function createServiceAccountFile(): string {
-    const serviceAccountJson = {
-        type: 'service_account',
-        project_id: projectId,
-        private_key_id: 'key-1',
-        private_key: privateKey,
-        client_email: clientEmail,
-        client_id: '',
-        auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-        token_uri: 'https://oauth2.googleapis.com/token',
-        auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-    };
-
-    const credPath = join(process.cwd(), '.vertex-ai-credentials.json');
-    writeFileSync(credPath, JSON.stringify(serviceAccountJson, null, 2));
-    return credPath;
-}
-
-// Get or create prediction client
+// Get or create prediction client - pass credentials directly (no filesystem)
 function getPredictionClient(): PredictionServiceClient {
     if (!_predictionClient) {
-        // Create service account file if not exists
-        if (!_credentialsPath || !existsSync(_credentialsPath)) {
-            _credentialsPath = createServiceAccountFile();
-        }
-
-        // Set GOOGLE_APPLICATION_CREDENTIALS
-        process.env.GOOGLE_APPLICATION_CREDENTIALS = _credentialsPath;
-
         _predictionClient = new PredictionServiceClient({
             apiEndpoint: `${location}-aiplatform.googleapis.com`,
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+            },
+            projectId: projectId,
         });
     }
     return _predictionClient;
@@ -89,16 +64,9 @@ export const embeddings = {
     embedQuery: createEmbedding,
 };
 
-// Cleanup function
+// Cleanup function - no-op since credentials are passed directly (no temp files)
 export function cleanupCredentials() {
-    if (_credentialsPath && existsSync(_credentialsPath)) {
-        try {
-            unlinkSync(_credentialsPath);
-            _credentialsPath = null;
-        } catch (error) {
-            console.warn('Failed to cleanup credentials file:', error);
-        }
-    }
+    // No cleanup needed - credentials are passed directly to client
 }
 
 // Export project and location for other modules
